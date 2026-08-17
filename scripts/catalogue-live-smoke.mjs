@@ -2,6 +2,7 @@ import { retryDelayMs } from "./rate-limit.mjs";
 
 const API = "https://8004scan.io/api/v1/public/agents";
 const SITE = process.env.CASTYARD_SITE_URL ?? "https://castyard-agents.asaborodaniel.chatgpt.site";
+const SITE_TOKEN = process.env.CASTYARD_SITE_TOKEN;
 const SEARCHES = ["rebalancing", "grid trading", "yield optimization", "yield optimisation", "health factor"];
 const CHAINS = [56, 97];
 
@@ -10,7 +11,12 @@ function assert(condition, message) {
 }
 
 async function get(url, retries = 2) {
-  const response = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15_000) });
+  const target = new URL(url);
+  const headers = { accept: "application/json" };
+  if (SITE_TOKEN && target.origin === new URL(SITE).origin) {
+    headers["OAI-Sites-Authorization"] = `Bearer ${SITE_TOKEN}`;
+  }
+  const response = await fetch(target, { headers, signal: AbortSignal.timeout(15_000) });
   if (response.status === 429 && retries > 0) {
     const delay = retryDelayMs(response.headers);
     assert(delay !== null && delay <= 59_000, "8004scan rate limit has no bounded recovery time");
