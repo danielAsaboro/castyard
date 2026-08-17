@@ -107,6 +107,26 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .category-requirements ol { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 1rem 0 0; padding: 0; counter-reset: evidence; list-style: none; }
 .category-requirements li { color: var(--muted); font-size: 0.72rem; line-height: 1.4; counter-increment: evidence; }
 .category-requirements li::before { display: block; color: var(--amber-deep); content: "0" counter(evidence); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-bottom: 0.4rem; }
+.passport { display: grid; gap: 1rem; }
+.passport-hero { display: flex; align-items: end; justify-content: space-between; gap: 2rem; padding-bottom: 2rem; }
+.passport-status { display: grid; justify-items: end; gap: 1rem; min-width: 15rem; }
+.passport-section { padding: 1.5rem; }
+.passport-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+.passport-section-heading h2, .trust-boundary h2, .activation-boundary h2 { margin: 0.25rem 0 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.7rem; font-weight: 500; letter-spacing: -0.03em; }
+.fact-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.fact-grid div { min-width: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0.9rem; }
+.fact-grid dt { color: var(--muted); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.fact-grid dd { overflow-wrap: anywhere; margin: 0.45rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; }
+.metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.window-row { display: flex; flex-wrap: wrap; gap: 0.7rem 1.3rem; margin-top: 1rem; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; }
+.receipt-list { display: grid; gap: 0.5rem; }
+.receipt-list a { display: grid; grid-template-columns: 7rem 1fr auto; gap: 1rem; align-items: center; border-top: 1px solid var(--line); padding: 0.8rem 0; font-size: 0.72rem; }
+.receipt-list code { color: var(--muted); }
+.receipt-list strong { color: var(--amber-deep); }
+.trust-boundary { display: grid; grid-template-columns: 0.65fr 1fr; gap: 2rem; border: 1px solid var(--line); padding: 1.5rem; }
+.trust-boundary ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.8rem; line-height: 1.7; }
+.activation-boundary { border-left: 5px solid var(--amber); padding: 1.5rem; }
+.activation-boundary p:last-child { max-width: 50rem; color: var(--muted); line-height: 1.6; }
 
 @media (max-width: 720px) {
   .primary-nav { display: none; }
@@ -116,6 +136,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero, .section-heading, .category-card { grid-template-columns: 1fr; }
   .category-index { display: none; }
   .discovery-form, .agent-inventory, .category-requirements ol { grid-template-columns: 1fr; }
+  .passport-hero, .passport-section-heading { align-items: start; flex-direction: column; }
+  .passport-status { justify-items: start; min-width: 0; }
+  .fact-grid, .metric-grid, .trust-boundary { grid-template-columns: 1fr; }
+  .receipt-list a { grid-template-columns: 1fr; gap: 0.35rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

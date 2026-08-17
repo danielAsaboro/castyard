@@ -25,7 +25,7 @@ export function AgentCard({ agent, now }: { agent: AgentSummary; now?: Date }) {
         <div><dt>Claim reason</dt><dd>{agent.categoryClaims.map((claim) => claim.matchedPhrase).join(", ")}</dd></div>
       </dl>
       <SourceStamp source={identity.source} now={now} />
-      <Link className="agent-passport-link" href={`/agents/${encodeURIComponent(identity.agentId)}`}>
+      <Link className="agent-passport-link" href={`/agents/${identity.agentId}`}>
         Inspect passport <span aria-hidden="true">↗</span>
       </Link>
     </article>
