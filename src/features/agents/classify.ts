@@ -2,13 +2,15 @@ import type { AgentCategory, AgentIdentity, CategoryClaim } from "./domain";
 
 const PHRASES: Record<AgentCategory, readonly string[]> = {
   rebalancing: ["range rebalancer", "range manager", "liquidity range", "rebalancing", "rebalance"],
-  "grid-trading": ["grid trading", "grid trader", "grid bot", "bounded grid"],
+  "grid-trading": ["grid trading", "grid-trading", "grid trader", "grid bot", "bounded grid"],
   "yield-optimisation": [
     "risk-adjusted yield",
     "yield optimisation",
     "yield optimization",
     "yield optimiser",
     "yield optimizer",
+    "yield-optimiser",
+    "yield-optimizer",
   ],
   "health-factor-monitoring": [
     "health factor",

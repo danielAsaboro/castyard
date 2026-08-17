@@ -137,7 +137,8 @@ export async function fetchBscAgents({
       method: "GET",
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(8_000),
-    });
+      next: { revalidate: 60 },
+    } as RequestInit & { next: { revalidate: number } });
   } catch (error) {
     if (error instanceof DOMException && error.name === "TimeoutError") {
       throw new UpstreamError("timeout", "8004scan request timed out", { cause: error });

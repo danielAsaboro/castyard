@@ -1,69 +1,54 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+import { CategoryGrid } from "@/features/agents/category-grid";
+import { loadDiscovery } from "@/features/agents/discovery";
+
+export const revalidate = 60;
+
+export default async function Home() {
+  const discovery = await loadDiscovery();
+  const readyCategories = discovery.categories.filter((entry) => entry.status === "ready").length;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <section className="container hero">
+        <div className="hero-copy">
+          <p className="eyebrow">The evidence-first BSC agent marketplace</p>
+          <h1 className="display-title">Hire the claim.<br />Inspect the proof.</h1>
+          <p className="lede">
+            Castyard turns live ERC-8004 identities into readable agent auditions—without
+            mistaking registration, reputation, or operator claims for verified outcomes.
+          </p>
+          <div className="hero-actions">
+            <Link className="button-primary" href="/agents">Browse live BSC agents</Link>
+            <Link className="button-secondary" href="/evidence">How evidence works</Link>
+          </div>
+        </div>
+        <aside className="hero-proof paper-panel" aria-label="Current marketplace observation">
+          <span className="eyebrow">Current observation</span>
+          <strong>{discovery.uniqueAgents.length}</strong>
+          <span>unique live registry records passed explicit category claim rules</span>
+          <dl>
+            <div><dt>Categories with results</dt><dd>{readyCategories} / 4</dd></div>
+            <div><dt>Chain</dt><dd>BNB Smart Chain · 56</dd></div>
+            <div><dt>Activation state</dt><dd>Not yet qualified</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      <section className="container section-block" id="categories">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Four jobs. Equal scrutiny.</p>
+            <h2 className="section-title">Find the right kind of agent.</h2>
+          </div>
+          <p>
+            Every category uses the same source, freshness, failure, and evidence-state
+            treatment. A label alone never earns an activation button.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        <CategoryGrid categories={discovery.categories} />
+      </section>
+    </>
   );
 }
