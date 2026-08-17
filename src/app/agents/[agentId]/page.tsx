@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { AgentPassportNotFoundError, loadAgentPassport } from "@/features/agents/passport";
 import { PassportView } from "@/features/agents/passport-view";
+import { resolveSiteOrigin } from "@/lib/site-url";
 
 export const revalidate = 30;
 
@@ -28,11 +30,12 @@ export async function generateMetadata({ params }: { params: Promise<{ agentId: 
   const passport = await getPassport(agentId);
   const title = `${passport.identity.name} Agent Passport`;
   const description = passport.identity.description || "Live BSC ERC-8004 Agent Passport.";
+  const image = `${resolveSiteOrigin(await headers())}/og.png`;
   return {
     title,
     description,
-    openGraph: { title, description, images: [] },
-    twitter: { card: "summary", title, description, images: [] },
+    openGraph: { title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

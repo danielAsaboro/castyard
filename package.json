@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "smoke:live": "node scripts/live-smoke.mjs",
+    "check:boundary": "node scripts/boundary-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
