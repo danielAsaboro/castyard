@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 
 import { CatalogueRepository, type D1DatabaseLike } from "@/features/catalogue/repository";
+import { ReferenceSellerRepository } from "@/features/reference-seller/repository";
 import { catalogueSchemaStatements } from "./schema";
 
 export function getCatalogueRepository(): CatalogueRepository {
@@ -8,6 +9,11 @@ export function getCatalogueRepository(): CatalogueRepository {
     throw new Error("Cloudflare D1 binding `DB` is unavailable.");
   }
   return new CatalogueRepository(env.DB as unknown as D1DatabaseLike);
+}
+
+export function getReferenceSellerRepository(): ReferenceSellerRepository {
+  if (!env.DB) throw new Error("Cloudflare D1 binding `DB` is unavailable.");
+  return new ReferenceSellerRepository(env.DB as unknown as D1DatabaseLike);
 }
 
 export async function ensureCatalogueSchema(): Promise<void> {

@@ -80,4 +80,18 @@ export const catalogueSchemaStatements = [
     INSERT INTO agents_fts(rowid, name, description, search_text)
     VALUES (new.rowid, new.name, new.description, new.search_text);
   END`,
+  `CREATE TABLE IF NOT EXISTS reference_seller_jobs (
+    job_id TEXT PRIMARY KEY,
+    quote_nonce TEXT NOT NULL UNIQUE,
+    state TEXT NOT NULL CHECK (state IN ('processing', 'executed', 'submitted', 'failed')),
+    deliverable_json TEXT,
+    deliverable_hash TEXT,
+    transaction_hash TEXT,
+    receipt_block_number TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_reference_seller_jobs_state_updated
+    ON reference_seller_jobs(state, updated_at)`,
 ] as const;
