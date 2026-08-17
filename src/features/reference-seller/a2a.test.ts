@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { createReferenceSellerCard, handleA2aRequest } from "./a2a";
+import {
+  createReferenceSellerCard,
+  createReferenceSellerRegistration,
+  handleA2aRequest,
+} from "./a2a";
 
 const account = privateKeyToAccount("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
 const agentId = "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:2000";
@@ -30,6 +34,27 @@ describe("reference seller A2A surface", () => {
     ]);
     expect(card.defaultInputModes).toEqual(["application/json"]);
     expect(card.capabilities).toEqual({ streaming: false, pushNotifications: false, extendedAgentCard: false });
+    expect(card.metadata.registrations).toEqual([{
+      agentId: 2000,
+      agentRegistry: "eip155:97:0x8004a818bfb912233c491871b3d84c89a494bd9e",
+    }]);
+  });
+
+  it("publishes the ERC-8004 endpoint-domain verification document", () => {
+    const registration = createReferenceSellerRegistration("https://castyard.example", agentId);
+    expect(registration).toMatchObject({
+      type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+      active: true,
+      registrations: [{
+        agentId: 2000,
+        agentRegistry: "eip155:97:0x8004a818bfb912233c491871b3d84c89a494bd9e",
+      }],
+      services: [{
+        name: "A2A",
+        endpoint: "https://castyard.example/.well-known/agent-card.json",
+        version: "1.0",
+      }],
+    });
   });
 
   it("returns a signed quote in a standard A2A data part", async () => {

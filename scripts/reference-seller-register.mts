@@ -14,7 +14,11 @@ if (!baseUrl || new URL(baseUrl).protocol !== "https:") {
 }
 
 const privateKey = (await readFile(secretPath, "utf8")).trim();
-const wallet = new EVMWalletProvider({ privateKey, password: privateKey });
+const wallet = new EVMWalletProvider({
+  privateKey,
+  password: privateKey,
+  persist: false,
+});
 const agent = await ERC8004Agent.create({ walletProvider: wallet, network: "bsc-testnet" });
 const endpoint = AgentEndpoint.a2a(new URL(baseUrl).origin, {
   version: "1.0",

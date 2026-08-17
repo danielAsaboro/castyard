@@ -30,8 +30,21 @@ const skillDefinitions = [
   },
 ] as const;
 
+const registrationType = "https://eips.ethereum.org/EIPS/eip-8004#registration-v1";
+
+function parseAgentRegistration(agentId: string) {
+  const match = /^(\d+):(0x[0-9a-fA-F]{40}):(\d+)$/.exec(agentId);
+  if (!match) throw new Error("Invalid ERC-8004 agent identifier");
+  const [, chainId, identityRegistry, tokenId] = match;
+  return {
+    agentId: Number(tokenId),
+    agentRegistry: `eip155:${chainId}:${identityRegistry.toLowerCase()}`,
+  };
+}
+
 export function createReferenceSellerCard(baseUrl: string, agentId?: string) {
   const origin = new URL(baseUrl).origin;
+  const registrations = agentId ? [parseAgentRegistration(agentId)] : [];
   return {
     name: "Castyard Reference Seller",
     description: "A standards-based ERC-8004 seller for four read-only BSC DeFi analysis skills. Quotes are signed and execution is gated by funded ERC-8183 jobs.",
@@ -49,10 +62,30 @@ export function createReferenceSellerCard(baseUrl: string, agentId?: string) {
     skills: skillDefinitions,
     metadata: {
       ...(agentId ? { erc8004AgentId: agentId } : {}),
+      registrations,
       executionProtocol: "ERC-8183",
       chainId: 97,
       jobStatusUrlTemplate: `${origin}/api/reference-seller/jobs/{jobId}`,
     },
+  };
+}
+
+export function createReferenceSellerRegistration(baseUrl: string, agentId: string) {
+  const origin = new URL(baseUrl).origin;
+  return {
+    type: registrationType,
+    name: "Castyard Reference Seller",
+    description: "A standards-based ERC-8004 seller for four read-only BSC DeFi analysis skills, activated through funded ERC-8183 jobs.",
+    image: "",
+    services: [{
+      name: "A2A",
+      endpoint: `${origin}/.well-known/agent-card.json`,
+      version: "1.0",
+    }],
+    x402Support: false,
+    active: true,
+    registrations: [parseAgentRegistration(agentId)],
+    supportedTrust: ["reputation", "crypto-economic"],
   };
 }
 
