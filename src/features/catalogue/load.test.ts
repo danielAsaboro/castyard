@@ -37,6 +37,25 @@ describe("catalogue loading", () => {
     expect(result.source).toBe("index-partial");
   });
 
+  it("retries a stale partial refresh and preserves the new completion state", async () => {
+    const query = parseCatalogueQuery({ q: "grid" });
+    const indexed = queryCatalogue(agents, query);
+    let seeded = 0;
+    const result = await loadCatalogue(query, {
+      repository: {
+        currentCount: async () => 3,
+        currentComplete: async () => false,
+        refreshDue: async () => true,
+        replaceSyncSnapshot: async (snapshot) => { seeded = snapshot.agents.length; return "retry-sync"; },
+        search: async () => indexed,
+      },
+      fallback: async () => ({ agents, coverage: [], complete: true }),
+    });
+
+    expect(seeded).toBe(3);
+    expect(result.source).toBe("index");
+  });
+
   it("uses current registry records while a new durable index is empty", async () => {
     const query = parseCatalogueQuery({ q: "grid" });
     const result = await loadCatalogue(query, {

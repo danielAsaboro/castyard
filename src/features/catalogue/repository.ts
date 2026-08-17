@@ -219,6 +219,13 @@ export class CatalogueRepository {
     return row?.complete === 1;
   }
 
+  async refreshDue(): Promise<boolean> {
+    const row = await this.db.prepare(`SELECT started_at FROM catalogue_sync_runs
+      WHERE completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`).first<{ started_at: string }>();
+    const startedAt = row ? Date.parse(row.started_at) : 0;
+    return !Number.isFinite(startedAt) || Date.now() - startedAt >= 60_000;
+  }
+
   async replaceSyncSnapshot(result: CatalogueSyncResult): Promise<string> {
     const syncId = crypto.randomUUID();
     const now = new Date().toISOString();

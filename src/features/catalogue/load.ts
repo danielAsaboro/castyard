@@ -7,6 +7,7 @@ import { queryCatalogue } from "./search";
 export interface CatalogueReader {
   currentCount(): Promise<number>;
   currentComplete?(): Promise<boolean>;
+  refreshDue?(): Promise<boolean>;
   search(query: CatalogueQuery): Promise<CataloguePage>;
   replaceSyncSnapshot?(result: CatalogueSyncResult): Promise<string>;
 }
@@ -29,10 +30,15 @@ export async function loadCatalogue(
     const complete = dependencies.repository.currentComplete
       ? await dependencies.repository.currentComplete()
       : true;
-    return {
-      page: await dependencies.repository.search(query),
-      source: complete ? "index" : "index-partial",
-    };
+    const shouldRetry = !complete && dependencies.repository.refreshDue
+      ? await dependencies.repository.refreshDue()
+      : false;
+    if (!shouldRetry || !dependencies.repository.replaceSyncSnapshot) {
+      return {
+        page: await dependencies.repository.search(query),
+        source: complete ? "index" : "index-partial",
+      };
+    }
   }
   const inventory = await dependencies.fallback();
   if (dependencies.repository?.replaceSyncSnapshot && inventory.agents.length > 0) {
