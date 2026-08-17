@@ -127,6 +127,33 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .trust-boundary ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.8rem; line-height: 1.7; }
 .activation-boundary { border-left: 5px solid var(--amber); padding: 1.5rem; }
 .activation-boundary p:last-child { max-width: 50rem; color: var(--muted); line-height: 1.6; }
+.compare-picker { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin: 2rem 0; padding: 1rem; }
+.compare-picker fieldset { display: flex; flex-wrap: wrap; gap: 0.65rem; margin: 0; border: 0; padding: 0; }
+.compare-picker legend { width: 100%; margin-bottom: 0.65rem; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+.compare-picker label { display: flex; align-items: center; gap: 0.45rem; border: 1px solid var(--line); background: var(--canvas); padding: 0.55rem 0.7rem; font-size: 0.72rem; font-weight: 800; }
+.comparison-scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow); }
+.comparison-table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.comparison-table th, .comparison-table td { min-width: 13rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1rem; text-align: left; vertical-align: top; }
+.comparison-table thead th { background: var(--ink); color: var(--paper); }
+.comparison-table thead th:first-child { min-width: 15rem; color: #c8c2b3; font-size: 0.7rem; letter-spacing: 0.07em; text-transform: uppercase; }
+.comparison-table thead a { display: block; font-family: Georgia, "Times New Roman", serif; font-size: 1.15rem; font-weight: 500; }
+.comparison-table thead span { display: block; margin-top: 0.4rem; color: #c8c2b3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.65rem; }
+.comparison-table tbody th strong { display: block; font-family: Georgia, "Times New Roman", serif; font-size: 1rem; }
+.comparison-table tbody th span { display: block; margin-top: 0.45rem; color: var(--muted); font-size: 0.68rem; font-weight: 400; line-height: 1.45; }
+.comparison-table td p { margin: 0.75rem 0 0; font-size: 0.78rem; line-height: 1.45; text-transform: capitalize; }
+.evidence-guide { display: grid; gap: 2rem; }
+.evidence-guide > .lede { margin-bottom: 0; }
+.evidence-tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.evidence-tier { padding: 1.5rem; }
+.evidence-tier > span { color: var(--amber-deep); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.7rem; }
+.evidence-tier h2, .provenance-notes h2, .receipt-explainer h2 { margin: 1rem 0 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.6rem; font-weight: 500; letter-spacing: -0.03em; }
+.evidence-tier p, .receipt-explainer > p:last-child { color: var(--muted); font-size: 0.8rem; line-height: 1.65; }
+.provenance-notes { display: grid; grid-template-columns: 0.7fr 1fr; gap: 2rem; padding: 1.5rem; }
+.provenance-notes ul { margin: 0; padding: 0; list-style: none; }
+.provenance-notes li { border-top: 1px solid var(--line); padding: 0.75rem 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+.provenance-notes strong { color: var(--ink); }
+.receipt-explainer { border-left: 5px solid var(--amber); padding: 1.5rem; }
+.receipt-explainer h2 { max-width: 55rem; font-size: clamp(1.6rem, 3vw, 2.4rem); }
 
 @media (max-width: 720px) {
   .primary-nav { display: none; }
@@ -136,10 +163,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero, .section-heading, .category-card { grid-template-columns: 1fr; }
   .category-index { display: none; }
   .discovery-form, .agent-inventory, .category-requirements ol { grid-template-columns: 1fr; }
-  .passport-hero, .passport-section-heading { align-items: start; flex-direction: column; }
+  .passport-hero, .passport-section-heading, .compare-picker { align-items: start; flex-direction: column; }
   .passport-status { justify-items: start; min-width: 0; }
   .fact-grid, .metric-grid, .trust-boundary { grid-template-columns: 1fr; }
   .receipt-list a { grid-template-columns: 1fr; gap: 0.35rem; }
+  .evidence-tier-grid, .provenance-notes { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
