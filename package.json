@@ -13,7 +13,11 @@
     "smoke:catalogue": "node scripts/catalogue-live-smoke.mjs",
     "smoke:reference-seller": "tsx scripts/reference-seller-live-smoke.mts",
     "wallet:reference-seller": "tsx scripts/reference-seller-wallet.mts",
+    "wallet:reference-buyer": "tsx scripts/reference-buyer-wallet.mts",
+    "fund:reference-buyer": "tsx scripts/reference-buyer-fund.mts",
     "register:reference-seller": "tsx scripts/reference-seller-register.mts",
+    "smoke:reference-seller-paid": "tsx scripts/reference-seller-erc8183.mts",
+    "settle:reference-seller-paid": "tsx scripts/reference-seller-erc8183.mts --settle",
     "check:boundary": "node scripts/boundary-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest"

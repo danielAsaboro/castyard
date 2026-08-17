@@ -31,6 +31,7 @@ const skillDefinitions = [
 ] as const;
 
 const registrationType = "https://eips.ethereum.org/EIPS/eip-8004#registration-v1";
+export const REFERENCE_SELLER_PRICE_UNITS = 10_000_000_000_000_000n;
 
 function parseAgentRegistration(agentId: string) {
   const match = /^(\d+):(0x[0-9a-fA-F]{40}):(\d+)$/.exec(agentId);
@@ -129,7 +130,7 @@ export async function handleA2aRequest(request: unknown, dependencies: Dependenc
       account: dependencies.account,
       agentId: dependencies.agentId,
       task: data.task,
-      amount: 10_000n,
+      amount: REFERENCE_SELLER_PRICE_UNITS,
       now,
       ttlSeconds: 600,
       nonce,

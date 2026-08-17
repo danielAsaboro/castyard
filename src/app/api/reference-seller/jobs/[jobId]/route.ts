@@ -14,12 +14,18 @@ function parseJobId(value: string): bigint {
   return BigInt(value);
 }
 
-export async function GET(_request: Request, context: { params: Promise<{ jobId: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ jobId: string }> }) {
   try {
     const jobId = parseJobId((await context.params).jobId);
     await ensureCatalogueSchema();
     const record = await getReferenceSellerRepository().get(jobId);
     if (!record) return Response.json({ error: "Job has not been observed by this seller" }, { status: 404 });
+    if (new URL(request.url).searchParams.get("manifest") === "1") {
+      if (!record.deliverable_json) return Response.json({ error: "Deliverable is not available" }, { status: 409 });
+      return Response.json(JSON.parse(record.deliverable_json), {
+        headers: { "cache-control": record.state === "submitted" ? "public, max-age=31536000, immutable" : "no-store" },
+      });
+    }
     return Response.json({
       jobId: record.job_id,
       state: record.state,
@@ -51,7 +57,11 @@ export async function POST(request: Request, context: { params: Promise<{ jobId:
 
     await ensureCatalogueSchema();
     const repository = getReferenceSellerRepository();
-    const runtime = createReferenceSellerRuntime(privateKey, typeof env.BSC_TESTNET_RPC_URL === "string" ? env.BSC_TESTNET_RPC_URL : undefined);
+    const runtime = await createReferenceSellerRuntime(
+      privateKey,
+      request.url,
+      typeof env.BSC_TESTNET_RPC_URL === "string" ? env.BSC_TESTNET_RPC_URL : undefined,
+    );
     const result = await processFundedJob(jobId, body.quote, {
       now: () => Math.floor(Date.now() / 1000),
       expectedProvider: runtime.account.address,

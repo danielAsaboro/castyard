@@ -77,7 +77,7 @@ describe("reference seller A2A surface", () => {
       result: {
         message: {
           role: "ROLE_AGENT",
-          parts: [{ data: { action: "quote", quote: { agentId, amount: "10000" } } }],
+          parts: [{ data: { action: "quote", quote: { agentId, amount: "10000000000000000" } } }],
         },
       },
     });
