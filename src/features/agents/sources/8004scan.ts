@@ -38,6 +38,8 @@ export interface AgentSearchResult {
 export interface FetchBscAgentsInput {
   search?: string;
   limit?: number;
+  page?: number;
+  chainId?: 56 | 97;
   fetcher?: typeof fetch;
 }
 
@@ -65,13 +67,16 @@ function assertAddress(value: string, label: string): string {
   return value.toLowerCase();
 }
 
-export function normalize8004Agent(input: unknown): AgentIdentity {
+export function normalize8004Agent(input: unknown, expectedChainId?: 56 | 97): AgentIdentity {
   if (!isRecord(input)) {
     throw new UpstreamError("schema", "8004scan agent record is not an object");
   }
 
-  if (input.chain_id !== 56) {
-    throw new UpstreamError("schema", "8004scan agent record is not on BSC mainnet");
+  if (input.chain_id !== 56 && input.chain_id !== 97) {
+    throw new UpstreamError("schema", "8004scan agent record is not on a supported BSC network");
+  }
+  if (expectedChainId !== undefined && input.chain_id !== expectedChainId) {
+    throw new UpstreamError("schema", "8004scan agent record does not match the requested BSC network");
   }
 
   const protocols = input.supported_protocols;
@@ -82,7 +87,8 @@ export function normalize8004Agent(input: unknown): AgentIdentity {
   return {
     agentId: requiredString(input, "agent_id"),
     erc8004AgentTokenId: requiredString(input, "token_id"),
-    chainId: 56,
+    chainId: input.chain_id,
+    isTestnet: input.chain_id === 97,
     registryAddress: assertAddress(requiredString(input, "contract_address"), "registry address"),
     ownerAddress: assertAddress(requiredString(input, "owner_address"), "owner address"),
     name: requiredString(input, "name"),
@@ -122,11 +128,17 @@ function parsePagination(input: unknown): AgentSearchResult["pagination"] {
 export async function fetchBscAgents({
   search,
   limit = 10,
+  page = 1,
+  chainId = 56,
   fetcher = fetch,
 }: FetchBscAgentsInput = {}): Promise<AgentSearchResult> {
+  if (chainId !== 56 && chainId !== 97) {
+    throw new UpstreamError("schema", "Unsupported BSC chain ID");
+  }
   const url = new URL(AGENTS_URL);
-  url.searchParams.set("chainId", "56");
-  url.searchParams.set("limit", String(Math.min(10, Math.max(1, Math.trunc(limit)))));
+  url.searchParams.set("chainId", String(chainId));
+  url.searchParams.set("limit", String(Math.min(50, Math.max(1, Math.trunc(limit)))));
+  url.searchParams.set("page", String(Math.max(1, Math.trunc(page))));
   if (search?.trim()) {
     url.searchParams.set("search", search.trim());
   }
@@ -180,7 +192,7 @@ export async function fetchBscAgents({
   };
 
   const agents = payload.data.map((record) => ({
-    ...normalize8004Agent(record),
+    ...normalize8004Agent(record, chainId),
     source,
   }));
 

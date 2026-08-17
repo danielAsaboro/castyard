@@ -16,6 +16,7 @@ export function AgentCard({ agent, now }: { agent: AgentSummary; now?: Date }) {
       <h3>{identity.name}</h3>
       <p className="agent-description">{identity.description || "No description published."}</p>
       <div className="agent-markers" aria-label="Published protocol markers">
+        <span>{identity.isTestnet ? "BSC testnet" : "BSC mainnet"}</span>
         {identity.supportedProtocols.map((protocol) => <span key={protocol}>{protocol}</span>)}
         {identity.x402Supported ? <span>x402 marker</span> : null}
         <span>{identity.totalFeedbacks ?? 0} feedback</span>

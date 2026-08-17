@@ -10,6 +10,7 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "lint": "eslint",
     "smoke:live": "node scripts/live-smoke.mjs",
+    "smoke:catalogue": "node scripts/catalogue-live-smoke.mjs",
     "check:boundary": "node scripts/boundary-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest"

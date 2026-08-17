@@ -12,6 +12,7 @@ describe("AgentCard", () => {
         agentId,
         erc8004AgentTokenId: "265375",
         chainId: 56,
+        isTestnet: false,
         registryAddress: "0x8004a169fb4a3325136eb29fa0ceb6d2e539a432",
         ownerAddress: "0x20f1ca5d1e5a3ee94c29dbf95e6bf6cea6a8d64b",
         name: "BNB LP Range Rebalancer",
@@ -28,5 +29,6 @@ describe("AgentCard", () => {
     render(<AgentCard agent={agent} now={new Date("2026-08-17T12:01:00Z")} />);
 
     expect(screen.getByRole("link", { name: /inspect passport/i })).toHaveAttribute("href", `/agents/${agentId}`);
+    expect(screen.getByText("BSC mainnet")).toBeInTheDocument();
   });
 });

@@ -66,7 +66,8 @@ export interface SourceStamp {
 export interface AgentIdentity {
   agentId: string;
   erc8004AgentTokenId: string;
-  chainId: 56;
+  chainId: 56 | 97;
+  isTestnet: boolean;
   registryAddress: string;
   ownerAddress: string;
   name: string;

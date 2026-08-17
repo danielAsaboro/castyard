@@ -1,0 +1,15 @@
+{
+  "agent_id": "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1692",
+  "token_id": "1692",
+  "chain_id": 97,
+  "contract_address": "0x8004a818bfb912233c491871b3d84c89a494bd9e",
+  "owner_address": "0xce78f79112d9299fab9ed8d29d9f98b620e9c2e1",
+  "name": "MEFAI Signal Agent",
+  "description": "Autonomous seller agent delivering MEFAI live crypto trading signals as verifiable on-chain jobs. ERC-8183 negotiate/fund/deliver, x402 self-funding. Informational only.",
+  "supported_protocols": ["A2A"],
+  "x402_supported": true,
+  "total_feedbacks": 0,
+  "average_score": 0,
+  "created_at": "2026-07-29T00:00:00Z",
+  "updated_at": "2026-08-17T00:00:00Z"
+}
