@@ -127,6 +127,12 @@ export interface RebalancingEvidence extends AgentObservation {
   lowerPrice?: number;
   upperPrice?: number;
   currentPrice?: number;
+  rangePercent?: number;
+  triggerPercent?: number;
+  maxSlippagePercent?: number;
+  triggerSemantics?: string;
+  targetLowerPrice?: number;
+  targetUpperPrice?: number;
   tvl?: EvidenceValue<number>;
   pendingFees?: EvidenceValue<number>;
   gasCost?: EvidenceValue<number>;

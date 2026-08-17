@@ -1,0 +1,16 @@
+{
+  "service": "bnb-lp-range-rebalancer",
+  "version": "1.0.0",
+  "network": "bsc-mainnet",
+  "status": "ok",
+  "chain_id": 56,
+  "block": 116472091,
+  "rpc": "up",
+  "token_id": 7116214,
+  "config_problems": [],
+  "protocol_problems": [],
+  "protocol": "up",
+  "monitor_running": true,
+  "strategy_status": "active",
+  "last_check": "2026-08-17T13:26:14+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "rebalance_count": 1,
+  "last_rebalance": "2026-08-11T16:15:32+00:00",
+  "gas_spent_bnb": 0.000031857,
+  "fees_collected_usdt": 6.46251939e-10,
+  "fees_collected_bnb": 9.21497451e-10,
+  "fees_pending_usdt": 0.000664465347558608,
+  "fees_pending_bnb": 8.32996856675e-7,
+  "fees_total_usdt": 0.000664465993810547,
+  "fees_total_bnb": 8.339183541259999e-7,
+  "fees_total_value_usdt": 0.001168306636632858,
+  "fees_24h_usdt": 0.0001386255767073265,
+  "fees_24h_window_complete": true,
+  "gas_spent_usdt": 0.01924750939822242,
+  "pnl_usdt": -0.01807920276158956,
+  "tvl_usdt": 0.807982851967873,
+  "snapshots_recorded": 500,
+  "history": [
+    {
+      "at": "2026-08-11T16:15:32+00:00",
+      "from_token_id": 7116193,
+      "to_token_id": 7116214,
+      "reason": "within_range",
+      "price": 609.1590511663414,
+      "lower": 548.2243883994141,
+      "upper": 670.2659820168824,
+      "txs": [
+        "7068e8c3dcea7c46cdc54448e9473e37096f4f33937769a55339fee3845e1b9b",
+        "7389089697f3a38e3ed5a99ede26742408456674f4de89686901848fa1d25398",
+        "4f2e4d572342893b4470c7cd56583c892b31c21cf6813f6ae3b88853a3111ec0"
+      ]
+    }
+  ]
+}

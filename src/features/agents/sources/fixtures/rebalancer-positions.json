@@ -1,0 +1,53 @@
+{
+  "network": "bsc-mainnet",
+  "count": 1,
+  "positions": [
+    {
+      "token_id": 7116214,
+      "network": "bsc-mainnet",
+      "owner": "0x20f1cA5d1e5A3Ee94C29DbF95e6BF6ceA6a8d64b",
+      "operator": "0x0000000000000000000000000000000000000000",
+      "token0": "0x55d398326f99059fF775485246999027B3197955",
+      "token1": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      "fee": 500,
+      "tick_lower": -65080,
+      "tick_upper": -63070,
+      "lower_price_usdt_per_bnb": 548.2243883994141,
+      "upper_price_usdt_per_bnb": 670.2659820168824,
+      "liquidity": 335389792730626532,
+      "tokens_owed0": 0,
+      "tokens_owed1": 0,
+      "is_empty": false,
+      "is_managed_pair": true,
+      "value": {
+        "amount_usdt": 0.39066704572064476,
+        "amount_bnb": 0.000690709086799861,
+        "price_usdt_per_bnb": 604.1846187093079,
+        "tvl_usdt": 0.807982851967873
+      },
+      "pending_fees": {
+        "source": "collect_simulation",
+        "fees_usdt": 0.000664465347558608,
+        "fees_bnb": 8.32996856675e-7
+      },
+      "verification": {
+        "verified": true,
+        "checks": {
+          "exists": true,
+          "is_managed_pair": true,
+          "owned_by_agent": true,
+          "has_liquidity": true,
+          "in_range": true
+        },
+        "problems": [],
+        "owner": "0x20f1cA5d1e5A3Ee94C29DbF95e6BF6ceA6a8d64b",
+        "liquidity": 335389792730626532,
+        "current_price": 604.1846187093079,
+        "lower_price": 548.2243883994141,
+        "upper_price": 670.2659820168824,
+        "tvl_usdt": 0.807982851967873,
+        "tx_hash": null
+      }
+    }
+  ]
+}
