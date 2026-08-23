@@ -2,6 +2,9 @@ import { EvidenceBadge } from "@/components/evidence-badge";
 import { Metric } from "@/components/metric";
 import { SourceStamp } from "@/components/source-stamp";
 import { UpstreamState } from "@/components/upstream-state";
+import { ActivationPanel } from "@/features/activation/activation-panel";
+import { REFERENCE_SELLER_AGENT_ID } from "@/features/activation/contracts";
+import { getAddress } from "viem";
 import type { AgentPassport } from "./domain";
 import { formatAddress, formatWindow } from "./format";
 
@@ -13,11 +16,12 @@ function PublishedValue({ value }: { value: string | number | boolean | undefine
 
 export function PassportView({ passport }: { passport: AgentPassport }) {
   const { identity, rebalancingEvidence: evidence } = passport;
+  const isReferenceSeller = identity.agentId === REFERENCE_SELLER_AGENT_ID;
   return (
     <div className="passport">
       <header className="passport-hero">
         <div>
-          <p className="eyebrow">Agent Passport · BSC mainnet</p>
+          <p className="eyebrow">Agent Passport · BSC {identity.chainId === 97 ? "testnet" : "mainnet"}</p>
           <h1 className="section-title">{identity.name}</h1>
           <p className="lede">{identity.description || "No description published."}</p>
         </div>
@@ -124,18 +128,22 @@ export function PassportView({ passport }: { passport: AgentPassport }) {
             </ul>
           </section>
         </>
-      ) : (
+      ) : !isReferenceSeller ? (
         <UpstreamState kind="empty" />
-      )}
+      ) : null}
 
-      <section className="activation-boundary paper-panel">
-        <p className="eyebrow">Activation boundary</p>
-        <h2>Read-only evidence available; hiring and execution are not yet qualified in Castyard.</h2>
-        <p>
-          The service publishes write operations, but Castyard will not expose them until the
-          ERC-8183 commerce path, bounded authority, and durable execution receipts are verified.
-        </p>
-      </section>
+      {isReferenceSeller ? (
+        <ActivationPanel agentId={identity.agentId} expectedProvider={getAddress(identity.ownerAddress)} />
+      ) : (
+        <section className="activation-boundary paper-panel">
+          <p className="eyebrow">Activation boundary</p>
+          <h2>Read-only evidence available; hiring and execution are not yet qualified in Castyard.</h2>
+          <p>
+            The service publishes write operations, but Castyard will not expose them until the
+            ERC-8183 commerce path, bounded authority, and durable execution receipts are verified.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

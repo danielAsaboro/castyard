@@ -100,4 +100,29 @@ describe("Agent Passport view", () => {
     expect(screen.getByText(/read-only evidence available/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /activate|execute/i })).not.toBeInTheDocument();
   });
+
+  it("offers real signed-quote review only on the registered Castyard seller passport", () => {
+    render(<PassportView passport={{
+      ...passport,
+      identity: {
+        ...passport.identity,
+        agentId: "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830",
+        erc8004AgentTokenId: "1830",
+        chainId: 97,
+        isTestnet: true,
+        registryAddress: "0x8004a818bfb912233c491871b3d84c89a494bd9e",
+        ownerAddress: "0x74258A428e94294F14a8c8308CE21259223A0187",
+        name: "Castyard Reference Seller",
+      },
+      evidenceState: "registered",
+      observation: undefined,
+      rebalancingEvidence: undefined,
+    }} />);
+
+    expect(screen.getByText("Agent Passport · BSC testnet")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Define a read-only job" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Get signed quote" })).toBeInTheDocument();
+    expect(screen.queryByText("No matching live records")).not.toBeInTheDocument();
+    expect(screen.queryByText(/hiring and execution are not yet qualified/i)).not.toBeInTheDocument();
+  });
 });

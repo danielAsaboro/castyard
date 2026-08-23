@@ -153,6 +153,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .trust-boundary ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.8rem; line-height: 1.7; }
 .activation-boundary { border-left: 5px solid var(--amber); padding: 1.5rem; }
 .activation-boundary p:last-child { max-width: 50rem; color: var(--muted); line-height: 1.6; }
+.activation-panel { border-left: 5px solid var(--moss); padding: 1.5rem; }
+.activation-panel-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+.activation-panel-heading h2 { margin: 0.25rem 0 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.9rem; font-weight: 500; letter-spacing: -0.03em; }
+.activation-network { border: 1px solid var(--moss); border-radius: 999px; background: var(--moss-soft); padding: 0.4rem 0.65rem; color: var(--moss); font-size: 0.67rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; }
+.activation-intro { max-width: 52rem; color: var(--muted); font-size: 0.82rem; line-height: 1.65; }
+.activation-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1.3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+.activation-form label { color: var(--muted); font-size: 0.69rem; font-weight: 800; }
+.activation-form input, .activation-form select, .activation-form textarea { display: block; width: 100%; min-height: 2.9rem; margin-top: 0.4rem; border: 1px solid var(--line); border-radius: 0; background: white; padding: 0.72rem; color: var(--ink); font: inherit; }
+.activation-form textarea { min-height: 6rem; resize: vertical; }
+.activation-wide { grid-column: 1 / -1; }
+.activation-submit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; }
+.activation-submit-row button { border: 0; cursor: pointer; }
+.activation-submit-row button:disabled { cursor: wait; opacity: 0.65; }
+.activation-submit-row span { color: var(--muted); font-size: 0.7rem; }
+.activation-error { border-left: 3px solid var(--red); background: rgb(155 52 47 / 8%); padding: 0.8rem; color: var(--red); font-size: 0.78rem; }
+.quote-review { margin-top: 1.2rem; border: 1px solid var(--moss); background: var(--moss-soft); padding: 1rem; }
+.quote-review-title { display: flex; justify-content: space-between; gap: 1rem; color: var(--moss); font-size: 0.78rem; }
+.quote-review-title strong::before { display: inline-block; margin-right: 0.4rem; content: "✓"; }
+.quote-review dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 1rem 0 0; border-top: 1px solid rgb(53 92 66 / 25%); border-left: 1px solid rgb(53 92 66 / 25%); }
+.quote-review dl div { min-width: 0; border-right: 1px solid rgb(53 92 66 / 25%); border-bottom: 1px solid rgb(53 92 66 / 25%); padding: 0.75rem; }
+.quote-review dt { color: var(--moss); font-size: 0.62rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; }
+.quote-review dd { overflow-wrap: anywhere; margin: 0.35rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; }
+.quote-review p { margin: 1rem 0 0; color: var(--moss); font-size: 0.76rem; line-height: 1.55; }
 .compare-picker { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin: 2rem 0; padding: 1rem; }
 .compare-picker fieldset { display: flex; flex-wrap: wrap; gap: 0.65rem; margin: 0; border: 0; padding: 0; }
 .compare-picker legend { width: 100%; margin-bottom: 0.65rem; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
@@ -193,9 +216,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .catalogue-filters { position: static; }
   .catalogue-toolbar, .catalogue-sort-form { align-items: stretch; flex-direction: column; }
   .catalogue-sort-form label { min-width: 0; }
-  .passport-hero, .passport-section-heading, .compare-picker { align-items: start; flex-direction: column; }
+  .passport-hero, .passport-section-heading, .compare-picker, .activation-panel-heading { align-items: start; flex-direction: column; }
   .passport-status { justify-items: start; min-width: 0; }
   .fact-grid, .metric-grid, .trust-boundary { grid-template-columns: 1fr; }
+  .activation-form, .quote-review dl { grid-template-columns: 1fr; }
   .receipt-list a { grid-template-columns: 1fr; gap: 0.35rem; }
   .evidence-tier-grid, .provenance-notes { grid-template-columns: 1fr; }
 }
