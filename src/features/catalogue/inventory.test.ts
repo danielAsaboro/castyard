@@ -30,6 +30,14 @@ const referenceSellerCard = {
   metadata: { erc8004AgentId: REFERENCE_SELLER_AGENT_ID, executionProtocol: "ERC-8183", chainId: 97 },
 };
 
+const referenceSellerRegistration = {
+  type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  x402Support: false,
+  active: true,
+  services: [{ name: "A2A", endpoint: "https://castyard-agents.asaborodaniel.chatgpt.site/.well-known/agent-card.json", version: "1.0" }],
+  registrations: [{ agentId: 1830, agentRegistry: "eip155:97:0x8004a818bfb912233c491871b3d84c89a494bd9e" }],
+};
+
 function response(data: unknown[]): Response {
   return new Response(JSON.stringify({
     success: true,
@@ -50,7 +58,7 @@ describe("judged marketplace inventory", () => {
       const url = new URL(String(input));
       if (url.origin === "https://castyard-agents.asaborodaniel.chatgpt.site") {
         cardRequests += 1;
-        return new Response(JSON.stringify(referenceSellerCard), { status: 200 });
+        return new Response(JSON.stringify(url.pathname.includes("agent-registration") ? referenceSellerRegistration : referenceSellerCard), { status: 200 });
       }
       const chainId = url.searchParams.get("chainId") ?? "";
       const search = url.searchParams.get("search") ?? "";
@@ -62,7 +70,7 @@ describe("judged marketplace inventory", () => {
     const result = await loadMarketplaceInventory(fetcher);
 
     expect(requests).toHaveLength(11);
-    expect(cardRequests).toBe(1);
+    expect(cardRequests).toBe(2);
     expect(result.agents).toHaveLength(5);
     expect(result.complete).toBe(true);
     expect(result.agents.every((agent) => agent.categoryClaims.length > 0)).toBe(true);
@@ -75,7 +83,7 @@ describe("judged marketplace inventory", () => {
     const fetcher: typeof fetch = async (input) => {
       const url = new URL(String(input));
       if (url.origin === "https://castyard-agents.asaborodaniel.chatgpt.site") {
-        return new Response(JSON.stringify(referenceSellerCard), { status: 200 });
+        return new Response(JSON.stringify(url.pathname.includes("agent-registration") ? referenceSellerRegistration : referenceSellerCard), { status: 200 });
       }
       if (url.searchParams.get("chainId") === "97" && url.searchParams.get("search") === "grid trading") {
         return new Response("unavailable", { status: 503 });

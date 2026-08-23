@@ -34,9 +34,18 @@ const card = {
   },
 };
 
+const registration = {
+  type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  name: "Castyard Reference Seller",
+  x402Support: false,
+  active: true,
+  services: [{ name: "A2A", endpoint: "https://castyard-agents.asaborodaniel.chatgpt.site/.well-known/agent-card.json", version: "1.0" }],
+  registrations: [{ agentId: 1830, agentRegistry: "eip155:97:0x8004a818bfb912233c491871b3d84c89a494bd9e" }],
+};
+
 describe("reference seller marketplace discovery", () => {
   it("derives all four category claims and the commerce rail from its verified live AgentCard", () => {
-    const summary = summarizeReferenceSeller(identity, card, "https://castyard-agents.asaborodaniel.chatgpt.site");
+    const summary = summarizeReferenceSeller(identity, card, registration, "https://castyard-agents.asaborodaniel.chatgpt.site");
 
     expect(summary.categoryClaims.map(({ category }) => category)).toEqual([
       "rebalancing",
@@ -46,6 +55,7 @@ describe("reference seller marketplace discovery", () => {
     ]);
     expect(summary.activationRails).toEqual(["erc8183"]);
     expect(summary.evidenceState).toBe("claimed");
+    expect(summary.identity.x402Supported).toBe(false);
   });
 
   it.each([
@@ -53,6 +63,11 @@ describe("reference seller marketplace discovery", () => {
     ["another endpoint", { ...card, supportedInterfaces: [{ ...card.supportedInterfaces[0], url: "https://evil.example/a2a" }] }],
     ["missing skill", { ...card, skills: card.skills.slice(0, 3) }],
   ])("rejects %s", (_label, invalidCard) => {
-    expect(() => summarizeReferenceSeller(identity, invalidCard, "https://castyard-agents.asaborodaniel.chatgpt.site")).toThrow();
+    expect(() => summarizeReferenceSeller(identity, invalidCard, registration, "https://castyard-agents.asaborodaniel.chatgpt.site")).toThrow();
+  });
+
+  it("rejects an endpoint-domain registration that does not bind the live AgentCard", () => {
+    const invalid = { ...registration, services: [{ ...registration.services[0], endpoint: "https://evil.example/card.json" }] };
+    expect(() => summarizeReferenceSeller(identity, card, invalid, "https://castyard-agents.asaborodaniel.chatgpt.site")).toThrow();
   });
 });
