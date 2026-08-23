@@ -1,4 +1,3 @@
-import type { CatalogueSyncResult } from "./sync";
 import type { MarketplaceInventory } from "./inventory";
 import type { CatalogueQuery } from "./query";
 import type { CataloguePage } from "./search";
@@ -9,7 +8,7 @@ export interface CatalogueReader {
   currentComplete?(): Promise<boolean>;
   refreshDue?(): Promise<boolean>;
   search(query: CatalogueQuery): Promise<CataloguePage>;
-  replaceSyncSnapshot?(result: CatalogueSyncResult): Promise<string>;
+  replaceSyncSnapshot?(result: MarketplaceInventory): Promise<string>;
 }
 
 export interface CatalogueLoadDependencies {
@@ -30,7 +29,7 @@ export async function loadCatalogue(
     const complete = dependencies.repository.currentComplete
       ? await dependencies.repository.currentComplete()
       : true;
-    const shouldRetry = !complete && dependencies.repository.refreshDue
+    const shouldRetry = dependencies.repository.refreshDue
       ? await dependencies.repository.refreshDue()
       : false;
     if (!shouldRetry || !dependencies.repository.replaceSyncSnapshot) {
@@ -42,11 +41,7 @@ export async function loadCatalogue(
   }
   const inventory = await dependencies.fallback();
   if (dependencies.repository?.replaceSyncSnapshot && inventory.agents.length > 0) {
-    await dependencies.repository.replaceSyncSnapshot({
-      agents: inventory.agents.map(({ identity }) => identity),
-      coverage: inventory.coverage,
-      complete: inventory.complete,
-    });
+    await dependencies.repository.replaceSyncSnapshot(inventory);
     return {
       page: await dependencies.repository.search(query),
       source: inventory.complete ? "index" : "index-partial",

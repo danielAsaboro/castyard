@@ -18,6 +18,7 @@ export function AgentCard({ agent, now }: { agent: AgentSummary; now?: Date }) {
       <div className="agent-markers" aria-label="Published protocol markers">
         <span>{identity.isTestnet ? "BSC testnet" : "BSC mainnet"}</span>
         {identity.supportedProtocols.map((protocol) => <span key={protocol}>{protocol}</span>)}
+        {agent.activationRails?.includes("erc8183") ? <span>ERC-8183 verified</span> : null}
         {identity.x402Supported ? <span>x402 marker</span> : null}
         <span>{identity.totalFeedbacks ?? 0} feedback</span>
       </div>

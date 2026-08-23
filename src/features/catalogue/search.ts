@@ -124,7 +124,8 @@ function matchesFacets(agent: AgentSummary, query: CatalogueQuery): boolean {
   if (query.network === "mainnet" && agent.identity.chainId !== 56) return false;
   if (query.network === "testnet" && agent.identity.chainId !== 97) return false;
   if (query.evidence !== "all" && agent.evidenceState !== query.evidence) return false;
-  const erc8183 = agent.identity.supportedProtocols.some((protocol) => normalize(protocol).includes("erc 8183"));
+  const erc8183 = agent.activationRails?.includes("erc8183")
+    || agent.identity.supportedProtocols.some((protocol) => normalize(protocol).includes("erc 8183"));
   if (query.rail === "erc8183" && !erc8183) return false;
   if (query.rail === "x402" && !agent.identity.x402Supported) return false;
   return true;

@@ -56,6 +56,24 @@ describe("catalogue loading", () => {
     expect(result.source).toBe("index");
   });
 
+  it("refreshes a completed index after its freshness window", async () => {
+    const query = parseCatalogueQuery({ q: "grid" });
+    const indexed = queryCatalogue(agents, query);
+    let seeded = 0;
+    await loadCatalogue(query, {
+      repository: {
+        currentCount: async () => 3,
+        currentComplete: async () => true,
+        refreshDue: async () => true,
+        replaceSyncSnapshot: async (snapshot) => { seeded = snapshot.agents.length; return "fresh-sync"; },
+        search: async () => indexed,
+      },
+      fallback: async () => ({ agents, coverage: [], complete: true }),
+    });
+
+    expect(seeded).toBe(3);
+  });
+
   it("uses current registry records while a new durable index is empty", async () => {
     const query = parseCatalogueQuery({ q: "grid" });
     const result = await loadCatalogue(query, {

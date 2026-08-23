@@ -40,6 +40,14 @@ describe("catalogue search", () => {
     expect(result.items[0].agent.identity.erc8004AgentTokenId).toBe("267697");
   });
 
+  it("uses verified service activation rails without rewriting registry protocols", () => {
+    const erc8183Agent = { ...agents[0], activationRails: ["erc8183" as const] };
+    const result = queryCatalogue([erc8183Agent, ...agents.slice(1)], parseCatalogueQuery({ rail: "erc8183" }));
+
+    expect(result.items.map(({ agent }) => agent.identity.agentId)).toEqual([erc8183Agent.identity.agentId]);
+    expect(erc8183Agent.identity.supportedProtocols).not.toContain("ERC-8183");
+  });
+
   it("uses canonical identity as a stable tie-breaker", () => {
     const result = queryCatalogue(agents, parseCatalogueQuery({ q: "positioncrew" }));
 

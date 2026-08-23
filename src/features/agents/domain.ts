@@ -97,6 +97,7 @@ export interface AgentSummary {
   identity: AgentIdentity;
   categoryClaims: CategoryClaim[];
   evidenceState: EvidenceState;
+  activationRails?: ("erc8183")[];
   observation?: AgentObservation;
   qualificationProblems: string[];
 }

@@ -9,3 +9,5 @@ export const BSC_TESTNET_PROTOCOL = {
 
 export const REFERENCE_SELLER_AGENT_ID =
   "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830";
+export const REFERENCE_SELLER_TOKEN_ID = "1830";
+export const REFERENCE_SELLER_ORIGIN = "https://castyard-agents.asaborodaniel.chatgpt.site";

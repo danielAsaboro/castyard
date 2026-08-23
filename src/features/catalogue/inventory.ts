@@ -1,6 +1,12 @@
 import type { AgentSummary } from "@/features/agents/domain";
 import { qualifyAgent } from "@/features/agents/qualify";
 import { fetchCompleteBscCatalogue, type NetworkCoverage } from "./sync";
+import {
+  REFERENCE_SELLER_AGENT_ID,
+  REFERENCE_SELLER_ORIGIN,
+  REFERENCE_SELLER_TOKEN_ID,
+} from "@/features/activation/contracts";
+import { fetchReferenceSellerSummary } from "@/features/reference-seller/discovery";
 
 const MARKETPLACE_SEARCHES = [
   "rebalancing",
@@ -29,6 +35,21 @@ export async function loadMarketplaceInventory(fetcher: typeof fetch = fetch): P
       const qualified = qualifyAgent(identity);
       if (qualified.categoryClaims.length > 0) agents.set(identity.agentId, qualified);
     }
+  }
+
+  const reference = await fetchCompleteBscCatalogue({ chainIds: [97], search: REFERENCE_SELLER_TOKEN_ID, fetcher });
+  coverage.push(...reference.coverage);
+  complete = complete && reference.complete;
+  const referenceIdentity = reference.agents.find(({ agentId }) => agentId === REFERENCE_SELLER_AGENT_ID);
+  if (referenceIdentity) {
+    try {
+      const summary = await fetchReferenceSellerSummary(referenceIdentity, fetcher, REFERENCE_SELLER_ORIGIN);
+      agents.set(referenceIdentity.agentId, summary);
+    } catch {
+      complete = false;
+    }
+  } else if (reference.complete) {
+    complete = false;
   }
 
   return { agents: [...agents.values()], coverage, complete };

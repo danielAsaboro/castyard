@@ -23,6 +23,7 @@ describe("AgentCard", () => {
       },
       categoryClaims: [{ category: "rebalancing", matchedPhrase: "rebalancer" }],
       evidenceState: "claimed",
+      activationRails: ["erc8183"],
       qualificationProblems: [],
     };
 
@@ -30,5 +31,6 @@ describe("AgentCard", () => {
 
     expect(screen.getByRole("link", { name: /inspect passport/i })).toHaveAttribute("href", `/agents/${agentId}`);
     expect(screen.getByText("BSC mainnet")).toBeInTheDocument();
+    expect(screen.getByText("ERC-8183 verified")).toBeInTheDocument();
   });
 });

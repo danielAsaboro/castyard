@@ -20,8 +20,11 @@ export async function loadAgentPassport(
   // 8004scan's public search matches token IDs but does not match the canonical
   // chain:registry:token composite. We still require an exact composite match
   // after retrieval so a token-ID collision cannot select another identity.
-  const tokenId = agentId.split(":").at(-1) ?? agentId;
-  const result = await fetchBscAgents({ search: tokenId, limit: 10, fetcher });
+  const parts = agentId.split(":");
+  const chainId = parts[0] === "56" ? 56 : parts[0] === "97" ? 97 : undefined;
+  if (!chainId) throw new AgentPassportNotFoundError(agentId);
+  const tokenId = parts.at(-1) ?? agentId;
+  const result = await fetchBscAgents({ chainId, search: tokenId, limit: 10, fetcher });
   const identity = result.agents.find((agent) => agent.agentId === agentId);
   if (!identity) {
     throw new AgentPassportNotFoundError(agentId);

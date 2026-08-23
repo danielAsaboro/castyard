@@ -10,6 +10,7 @@ import positions from "./sources/fixtures/rebalancer-positions.json";
 import status from "./sources/fixtures/rebalancer-status.json";
 import strategy from "./sources/fixtures/rebalancer-strategy.json";
 import transactions from "./sources/fixtures/rebalancer-transactions.json";
+import capturedTestnetAgent from "./sources/fixtures/8004scan-mefai-testnet.json";
 
 const serviceResponses: Record<string, unknown> = {
   "/health": health,
@@ -70,6 +71,28 @@ describe("agent passport loader", () => {
     expect(passport.evidenceState).toBe("claimed");
     expect(passport.rebalancingEvidence).toBeUndefined();
     expect(origins).toEqual(["https://8004scan.io"]);
+  });
+
+  it("queries the BSC network encoded in a testnet agent identifier", async () => {
+    let requestedChainId = "";
+    const fetcher: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      requestedChainId = url.searchParams.get("chainId") ?? "";
+      return new Response(JSON.stringify({
+        success: true,
+        data: [capturedTestnetAgent],
+        meta: {
+          timestamp: "2026-08-17T00:00:00Z",
+          requestId: "testnet-passport",
+          pagination: { page: 1, limit: 10, total: 1, hasMore: false },
+        },
+      }), { status: 200 });
+    };
+
+    const result = await loadAgentPassport(capturedTestnetAgent.agent_id, fetcher);
+
+    expect(requestedChainId).toBe("97");
+    expect(result.identity.agentId).toBe(capturedTestnetAgent.agent_id);
   });
 
   it("retains partial evidence when one operator panel fails", async () => {

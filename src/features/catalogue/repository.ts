@@ -1,6 +1,5 @@
 import type { AgentSummary, CategoryClaim, EvidenceState } from "@/features/agents/domain";
-import { qualifyAgent } from "@/features/agents/qualify";
-import type { CatalogueSyncResult } from "./sync";
+import type { MarketplaceInventory } from "./inventory";
 import type { CataloguePage } from "./search";
 import type { CatalogueQuery } from "./query";
 
@@ -164,6 +163,7 @@ interface AgentRow {
   protocols_json: string;
   category_claims_json: string;
   x402_supported: number;
+  erc8183_supported: number;
   evidence_state: string;
   feedback_count: number | null;
   average_score: number | null;
@@ -202,6 +202,7 @@ function rowToSummary(row: AgentRow): AgentSummary {
     },
     categoryClaims: JSON.parse(row.category_claims_json) as CategoryClaim[],
     evidenceState: state,
+    activationRails: row.erc8183_supported === 1 ? ["erc8183"] : undefined,
     qualificationProblems: [],
   };
 }
@@ -227,7 +228,7 @@ export class CatalogueRepository {
     return !Number.isFinite(startedAt) || Date.now() - startedAt >= 60_000;
   }
 
-  async replaceSyncSnapshot(result: CatalogueSyncResult): Promise<string> {
+  async replaceSyncSnapshot(result: MarketplaceInventory): Promise<string> {
     const syncId = crypto.randomUUID();
     const now = new Date().toISOString();
     const statements: D1PreparedStatement[] = [
@@ -236,10 +237,11 @@ export class CatalogueRepository {
         VALUES (?, ?, 0, ?, 0)`).bind(syncId, now, JSON.stringify(result.coverage)),
     ];
 
-    for (const identity of result.agents) {
-      const summary = qualifyAgent(identity);
+    for (const summary of result.agents) {
+      const { identity } = summary;
       const categories = summary.categoryClaims;
-      const erc8183 = identity.supportedProtocols.some((protocol) => /erc[- ]?8183/i.test(protocol));
+      const erc8183 = summary.activationRails?.includes("erc8183")
+        || identity.supportedProtocols.some((protocol) => /erc[- ]?8183/i.test(protocol));
       const searchText = [
         categories.map(({ category, matchedPhrase }) => `${category} ${matchedPhrase}`).join(" "),
         identity.supportedProtocols.join(" "),
