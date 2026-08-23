@@ -11,6 +11,8 @@ import status from "./sources/fixtures/rebalancer-status.json";
 import strategy from "./sources/fixtures/rebalancer-strategy.json";
 import transactions from "./sources/fixtures/rebalancer-transactions.json";
 import capturedTestnetAgent from "./sources/fixtures/8004scan-mefai-testnet.json";
+import { REFERENCE_SELLER_AGENT_ID, REFERENCE_SELLER_ORIGIN } from "@/features/activation/contracts";
+import { createReferenceSellerCard, createReferenceSellerRegistration } from "@/features/reference-seller/a2a";
 
 const serviceResponses: Record<string, unknown> = {
   "/health": health,
@@ -93,6 +95,45 @@ describe("agent passport loader", () => {
 
     expect(requestedChainId).toBe("97");
     expect(result.identity.agentId).toBe(capturedTestnetAgent.agent_id);
+  });
+
+  it("reconciles the Castyard seller passport with its bound live service documents", async () => {
+    const sellerRecord = {
+      ...capturedTestnetAgent,
+      agent_id: REFERENCE_SELLER_AGENT_ID,
+      token_id: "1830",
+      owner_address: "0x74258A428e94294F14a8c8308CE21259223A0187",
+      name: "Castyard Reference Seller",
+      description: "A standards-based ERC-8004 seller for four read-only BSC DeFi analysis skills.",
+      x402_supported: true,
+    };
+    const requests: string[] = [];
+    const fetcher: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      requests.push(url.pathname);
+      if (url.origin === "https://8004scan.io") {
+        return new Response(JSON.stringify({
+          success: true,
+          data: [sellerRecord],
+          meta: { timestamp: "2026-08-24T00:00:00Z", requestId: "seller-passport", pagination: { page: 1, limit: 10, total: 1, hasMore: false } },
+        }), { status: 200 });
+      }
+      const document = url.pathname.includes("agent-registration")
+        ? createReferenceSellerRegistration(REFERENCE_SELLER_ORIGIN, REFERENCE_SELLER_AGENT_ID)
+        : createReferenceSellerCard(REFERENCE_SELLER_ORIGIN, REFERENCE_SELLER_AGENT_ID);
+      return new Response(JSON.stringify(document), { status: 200 });
+    };
+
+    const result = await loadAgentPassport(REFERENCE_SELLER_AGENT_ID, fetcher);
+
+    expect(requests).toEqual([
+      "/api/v1/public/agents",
+      "/.well-known/agent-card.json",
+      "/.well-known/agent-registration.json",
+    ]);
+    expect(result.identity.x402Supported).toBe(false);
+    expect(result.activationRails).toEqual(["erc8183"]);
+    expect(result.categoryClaims).toHaveLength(4);
   });
 
   it("retains partial evidence when one operator panel fails", async () => {

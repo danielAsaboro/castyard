@@ -2,6 +2,8 @@ import type { AgentPassport } from "./domain";
 import { qualifyAgent } from "./qualify";
 import { fetchBnbLpRebalancerEvidence } from "./sources/bnb-lp-rebalancer";
 import { fetchBscAgents } from "./sources/8004scan";
+import { REFERENCE_SELLER_AGENT_ID, REFERENCE_SELLER_ORIGIN } from "@/features/activation/contracts";
+import { fetchReferenceSellerSummary } from "@/features/reference-seller/discovery";
 
 export const REBALANCER_AGENT_ID =
   "56:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432:265375";
@@ -28,6 +30,10 @@ export async function loadAgentPassport(
   const identity = result.agents.find((agent) => agent.agentId === agentId);
   if (!identity) {
     throw new AgentPassportNotFoundError(agentId);
+  }
+
+  if (agentId === REFERENCE_SELLER_AGENT_ID) {
+    return fetchReferenceSellerSummary(identity, fetcher, REFERENCE_SELLER_ORIGIN);
   }
 
   if (agentId !== REBALANCER_AGENT_ID) {
