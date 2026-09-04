@@ -139,8 +139,11 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
     const restoreTimer = window.setTimeout(() => {
       const restored = loadBrowserActivationReceipt(agentId);
       if (restored) {
-        const submitted = restored.stage === "submitted" || restored.stage === "completed";
-        const verifyAt = submitted
+        // Once createJob has a confirmed receipt, the quote is historical evidence:
+        // re-check its signature at the validity boundary, then let the lifecycle's
+        // authoritative onchain reads decide which recovery/write actions are safe.
+        const anchoredOnchain = restored.stage !== "quoted";
+        const verifyAt = anchoredOnchain
           ? Math.min(Math.floor(Date.now() / 1_000), restored.quote.expiresAt)
           : Math.floor(Date.now() / 1_000);
         void verifySignedQuote(restored.quote, {

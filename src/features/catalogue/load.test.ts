@@ -96,7 +96,7 @@ describe("catalogue loading", () => {
     });
 
     expect(result.page).toBe(indexed);
-    expect(result.source).toBe("index");
+    expect(result.source).toBe("index-stale");
     expect(fallbackCalls).toBe(0);
     expect(scheduled).toBeTypeOf("function");
 

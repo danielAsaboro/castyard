@@ -19,7 +19,7 @@ export interface CatalogueLoadDependencies {
 
 export interface LoadedCatalogue {
   page: CataloguePage;
-  source: "index" | "index-partial" | "live-bootstrap";
+  source: "index" | "index-stale" | "index-partial" | "live-bootstrap";
 }
 
 export async function loadCatalogue(
@@ -47,7 +47,7 @@ export async function loadCatalogue(
       });
       return {
         page: await dependencies.repository.search(query),
-        source: complete ? "index" : "index-partial",
+        source: complete ? "index-stale" : "index-partial",
       };
     }
   }

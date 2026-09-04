@@ -184,4 +184,30 @@ describe("reference seller activation panel", () => {
     expect(await screen.findByRole("button", { name: "2. Register evaluation policy" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel unfunded job" })).toBeInTheDocument();
   });
+
+  it("restores an expired quote after its job exists so the buyer can recover or cancel", async () => {
+    const quote = await createSignedQuote({
+      account,
+      agentId,
+      task: { skill: "rebalancing", parameters: { poolAddress, rangeWidthBps: 500 } },
+      amount: 10_000_000_000_000_000n,
+      now: 1_000,
+      ttlSeconds: 600,
+      nonce: `0x${"44".repeat(32)}`,
+    });
+    const buyer = "0x291DB336D8b50C373F05045155c0fA7CdECe1451" as const;
+    vi.mocked(loadBrowserActivationReceipt).mockReturnValue({
+      ...createInitialBrowserReceipt(quote, buyer, new Date("2026-09-04T00:00:00.000Z")),
+      stage: "open",
+      jobId: "42",
+      expiredAt: "9999999999",
+      transactions: { createJob: `0x${"aa".repeat(32)}` },
+    });
+
+    render(<ActivationPanel agentId={agentId} expectedProvider={account.address} />);
+
+    expect(await screen.findByText("Receipt state: open")).toBeInTheDocument();
+    expect(await screen.findByText("The quote expired. Cancel this unfunded job before requesting a new quote.", {}, { timeout: 2_000 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reconnect wallet to resume" })).toBeInTheDocument();
+  });
 });

@@ -40,6 +40,8 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       <div className={`catalogue-source-state source-${catalogue.source}`} role="status">
         {catalogue.source === "index"
           ? "Search index current across all judged category queries on BSC mainnet and testnet."
+          : catalogue.source === "index-stale"
+            ? "Serving the last complete source snapshot while a background refresh checks every judged category query."
           : catalogue.source === "index-partial"
             ? "A source refresh was incomplete. Successful records remain visible and are not relabelled current."
             : "The durable index is unavailable. Showing current, source-fetched judged-category records without fixtures."}
