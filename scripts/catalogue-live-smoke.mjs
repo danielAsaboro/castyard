@@ -1,4 +1,4 @@
-import { retryDelayMs } from "./rate-limit.mjs";
+import { isTransientNetworkError, retryDelayMs } from "./rate-limit.mjs";
 
 const API = "https://8004scan.io/api/v1/public/agents";
 const SITE = process.env.CASTYARD_SITE_URL ?? "https://castyard-agents.asaborodaniel.chatgpt.site";
@@ -16,7 +16,16 @@ async function get(url, retries = 2) {
   if (SITE_TOKEN && target.origin === new URL(SITE).origin) {
     headers["OAI-Sites-Authorization"] = `Bearer ${SITE_TOKEN}`;
   }
-  const response = await fetch(target, { headers, signal: AbortSignal.timeout(15_000) });
+  let response;
+  try {
+    response = await fetch(target, { headers, signal: AbortSignal.timeout(15_000) });
+  } catch (error) {
+    if (retries > 0 && isTransientNetworkError(error)) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return get(url, retries - 1);
+    }
+    throw error;
+  }
   if (response.status === 429 && retries > 0) {
     const delay = retryDelayMs(response.headers);
     assert(delay !== null && delay <= 59_000, "8004scan rate limit has no bounded recovery time");

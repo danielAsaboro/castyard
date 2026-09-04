@@ -5,7 +5,7 @@ import { UpstreamState } from "@/components/upstream-state";
 import { ActivationPanel } from "@/features/activation/activation-panel";
 import { REFERENCE_SELLER_AGENT_ID } from "@/features/activation/contracts";
 import { getAddress } from "viem";
-import type { AgentPassport } from "./domain";
+import { AGENT_CATEGORIES, type AgentPassport } from "./domain";
 import { formatAddress, formatWindow } from "./format";
 
 function PublishedValue({ value }: { value: string | number | boolean | undefined }) {
@@ -130,6 +130,42 @@ export function PassportView({ passport }: { passport: AgentPassport }) {
         </>
       ) : !isReferenceSeller ? (
         <UpstreamState kind="empty" />
+      ) : null}
+
+      {isReferenceSeller ? (
+        <section className="passport-section paper-panel">
+          <div className="passport-section-heading">
+            <div>
+              <p className="eyebrow">02 · Published capability surface</p>
+              <h2>Four validated analysis contracts</h2>
+            </div>
+            <span className="activation-network">A2A 1.0 · read-only</span>
+          </div>
+          <p className="activation-intro">
+            Castyard fetched the seller&apos;s registered AgentCard and verified that every required skill is
+            bound to this passport. These are published capabilities, not performance claims; each quoted
+            task remains read-only and returns block-level provenance.
+          </p>
+          <div className="skill-contract-grid">
+            {AGENT_CATEGORIES.map((category) => {
+              const claim = passport.categoryClaims.find((entry) => entry.category === category.slug);
+              return (
+                <article className="skill-contract" key={category.slug}>
+                  <div className="skill-contract-state">
+                    <span>Published AgentCard skill</span>
+                    <strong>{claim ? "Validated" : "Missing"}</strong>
+                  </div>
+                  <h3>{category.label}</h3>
+                  <p>{category.description}</p>
+                  <dl>
+                    <div><dt>Skill binding</dt><dd>{claim?.matchedPhrase ?? "Not published"}</dd></div>
+                    <div><dt>Decision evidence</dt><dd>{category.evidenceChecklist.join(" · ")}</dd></div>
+                  </dl>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       ) : null}
 
       {isReferenceSeller ? (

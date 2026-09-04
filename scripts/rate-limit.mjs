@@ -8,3 +8,8 @@ export function retryDelayMs(headers, nowMs = Date.now()) {
   if (retryAfter && /^\d+$/.test(retryAfter)) return Number(retryAfter) * 1_000 + 250;
   return null;
 }
+
+export function isTransientNetworkError(error) {
+  return error instanceof TypeError
+    || (error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError"));
+}

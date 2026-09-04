@@ -14,6 +14,7 @@ export interface CatalogueReader {
 export interface CatalogueLoadDependencies {
   repository?: CatalogueReader;
   fallback(): Promise<MarketplaceInventory>;
+  scheduleRefresh?(task: () => Promise<void>): void;
 }
 
 export interface LoadedCatalogue {
@@ -33,6 +34,17 @@ export async function loadCatalogue(
       ? await dependencies.repository.refreshDue()
       : false;
     if (!shouldRetry || !dependencies.repository.replaceSyncSnapshot) {
+      return {
+        page: await dependencies.repository.search(query),
+        source: complete ? "index" : "index-partial",
+      };
+    }
+    if (dependencies.scheduleRefresh) {
+      const repository = dependencies.repository;
+      dependencies.scheduleRefresh(async () => {
+        const inventory = await dependencies.fallback();
+        if (inventory.agents.length > 0) await repository.replaceSyncSnapshot?.(inventory);
+      });
       return {
         page: await dependencies.repository.search(query),
         source: complete ? "index" : "index-partial",

@@ -125,4 +125,36 @@ describe("Agent Passport view", () => {
     expect(screen.queryByText("No matching live records")).not.toBeInTheDocument();
     expect(screen.queryByText(/hiring and execution are not yet qualified/i)).not.toBeInTheDocument();
   });
+
+  it("shows the reference seller's four validated skills with equal evidence depth", () => {
+    render(<PassportView passport={{
+      ...passport,
+      identity: {
+        ...passport.identity,
+        agentId: "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830",
+        erc8004AgentTokenId: "1830",
+        chainId: 97,
+        isTestnet: true,
+        registryAddress: "0x8004a818bfb912233c491871b3d84c89a494bd9e",
+        ownerAddress: "0x74258A428e94294F14a8c8308CE21259223A0187",
+        name: "Castyard Reference Seller",
+      },
+      categoryClaims: [
+        { category: "rebalancing", matchedPhrase: "AgentCard · LP rebalancing analysis" },
+        { category: "grid-trading", matchedPhrase: "AgentCard · Grid trading analysis" },
+        { category: "yield-optimisation", matchedPhrase: "AgentCard · Yield market comparison" },
+        { category: "health-factor-monitoring", matchedPhrase: "AgentCard · Account liquidity health check" },
+      ],
+      evidenceState: "claimed",
+      observation: undefined,
+      rebalancingEvidence: undefined,
+    }} />);
+
+    expect(screen.getByRole("heading", { name: "Four validated analysis contracts" })).toBeInTheDocument();
+    expect(screen.getAllByText("Published AgentCard skill")).toHaveLength(4);
+    expect(screen.getByRole("heading", { name: "Rebalancing" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Grid trading" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Yield optimisation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Health-factor monitoring" })).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 
 import { ensureCatalogueSchema, getCatalogueRepository } from "@/../db";
 import { AGENT_CATEGORIES } from "@/features/agents/domain";
@@ -25,6 +26,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const catalogue = await loadCatalogue(query, {
     repository,
     fallback: () => loadMarketplaceInventory(),
+    scheduleRefresh: (task) => after(task),
   });
 
   return (

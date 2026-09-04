@@ -74,6 +74,36 @@ describe("catalogue loading", () => {
     expect(seeded).toBe(3);
   });
 
+  it("serves a stale index immediately while scheduling its refresh", async () => {
+    const query = parseCatalogueQuery({ q: "grid" });
+    const indexed = queryCatalogue(agents, query);
+    let scheduled: (() => Promise<void>) | undefined;
+    let fallbackCalls = 0;
+
+    const result = await loadCatalogue(query, {
+      repository: {
+        currentCount: async () => 3,
+        currentComplete: async () => true,
+        refreshDue: async () => true,
+        replaceSyncSnapshot: async () => "background-sync",
+        search: async () => indexed,
+      },
+      fallback: async () => {
+        fallbackCalls += 1;
+        return { agents, coverage: [], complete: true };
+      },
+      scheduleRefresh: (task) => { scheduled = task; },
+    });
+
+    expect(result.page).toBe(indexed);
+    expect(result.source).toBe("index");
+    expect(fallbackCalls).toBe(0);
+    expect(scheduled).toBeTypeOf("function");
+
+    await scheduled?.();
+    expect(fallbackCalls).toBe(1);
+  });
+
   it("uses current registry records while a new durable index is empty", async () => {
     const query = parseCatalogueQuery({ q: "grid" });
     const result = await loadCatalogue(query, {
