@@ -116,6 +116,16 @@ export function saveBrowserActivationReceipt(receipt: BrowserActivationReceipt, 
   storage.setItem(storageKey(receipt.quote.agentId), JSON.stringify(receipt));
 }
 
+export function serializeBrowserActivationReceipt(receipt: BrowserActivationReceipt): string {
+  return `${JSON.stringify(receipt, null, 2)}\n`;
+}
+
+export function browserActivationReceiptFilename(receipt: BrowserActivationReceipt): string {
+  return receipt.jobId
+    ? `castyard-erc8183-job-${receipt.jobId}.json`
+    : `castyard-erc8183-quote-${receipt.quote.nonce.slice(2, 10)}.json`;
+}
+
 export function loadBrowserActivationReceipt(agentId: string, storage: Storage = window.localStorage): BrowserActivationReceipt | null {
   const raw = storage.getItem(storageKey(agentId));
   if (!raw) return null;

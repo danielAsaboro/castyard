@@ -13,10 +13,12 @@ import {
   type BrowserActivationReceipt,
 } from "./browser-lifecycle";
 import {
+  browserActivationReceiptFilename,
   connectBrowserActivation,
   createInitialBrowserReceipt,
   loadBrowserActivationReceipt,
   saveBrowserActivationReceipt,
+  serializeBrowserActivationReceipt,
 } from "./browser-wallet";
 import { verifySignedQuote, type ReferenceSellerTask, type SignedQuote } from "./quote";
 
@@ -377,6 +379,13 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
                   </li>
                 ))}
               </ol>
+              <a
+                className="button-secondary"
+                download={browserActivationReceiptFilename(receipt)}
+                href={`data:application/json;charset=utf-8,${encodeURIComponent(serializeBrowserActivationReceipt(receipt))}`}
+              >
+                Download receipt JSON
+              </a>
             </div>
           ) : null}
         </div>

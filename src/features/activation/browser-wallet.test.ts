@@ -3,10 +3,12 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import { createSignedQuote } from "./quote";
 import {
+  browserActivationReceiptFilename,
   createInitialBrowserReceipt,
   fetchSellerSubmission,
   loadBrowserActivationReceipt,
   saveBrowserActivationReceipt,
+  serializeBrowserActivationReceipt,
 } from "./browser-wallet";
 
 const agentId = "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830";
@@ -52,6 +54,22 @@ describe("browser activation receipt persistence", () => {
       ...receipt,
       buyer: "0x291DB336D8b50C373F05045155c0fA7CdECe1451",
     });
+  });
+
+  it("exports a portable receipt document with a stable evidence filename", async () => {
+    const receipt = {
+      ...createInitialBrowserReceipt(
+        await quote(),
+        "0x291db336d8b50c373f05045155c0fa7cdece1451",
+        new Date("2026-09-04T00:00:00.000Z"),
+      ),
+      stage: "open" as const,
+      jobId: "42",
+      transactions: { createJob: `0x${"aa".repeat(32)}` as const },
+    };
+
+    expect(JSON.parse(serializeBrowserActivationReceipt(receipt))).toEqual(receipt);
+    expect(browserActivationReceiptFilename(receipt)).toBe("castyard-erc8183-job-42.json");
   });
 
   it("fails closed for malformed or wrong-agent local data", () => {

@@ -39,7 +39,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       </p>
       <div className={`catalogue-source-state source-${catalogue.source}`} role="status">
         {catalogue.source === "index"
-          ? "Search index current across all judged category queries on BSC mainnet and testnet."
+          ? "Search index complete across all judged category queries on BSC mainnet and testnet. Individual records retain their own freshness labels."
           : catalogue.source === "index-stale"
             ? "Serving the last complete source snapshot while a background refresh checks every judged category query."
           : catalogue.source === "index-partial"
