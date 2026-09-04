@@ -178,6 +178,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .skill-contract dl div { padding-top: 0.7rem; }
 .skill-contract dt { color: var(--muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
 .skill-contract dd { margin: 0.25rem 0 0; overflow-wrap: anywhere; font-size: 0.7rem; line-height: 1.5; }
+.reference-live-evidence { margin-top: 3rem; }
+.live-skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1.3rem; }
+.live-skill-card { min-width: 0; padding: 1rem; }
+.live-skill-card h3 { margin: 0.8rem 0 0.25rem; font-family: Georgia, "Times New Roman", serif; font-size: 1.35rem; font-weight: 500; }
+.live-skill-time { margin: 0; color: var(--muted); font-size: 0.7rem; }
+.live-skill-card dl { display: grid; gap: 0.65rem; margin: 1rem 0; }
+.live-skill-card dt { color: var(--muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.live-skill-card dd { margin: 0.2rem 0 0; overflow-wrap: anywhere; font: 0.68rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.live-skill-card details { border-top: 1px solid var(--line); padding-top: 0.75rem; }
+.live-skill-card summary { cursor: pointer; color: var(--moss); font-size: 0.7rem; font-weight: 800; }
+.live-skill-card pre { max-height: 18rem; overflow: auto; background: var(--paper-deep); padding: 0.75rem; font-size: 0.65rem; white-space: pre-wrap; }
+.live-skill-card li { margin-top: 0.45rem; color: var(--muted); font-size: 0.68rem; line-height: 1.5; }
 .quote-review { margin-top: 1.2rem; border: 1px solid var(--moss); background: var(--moss-soft); padding: 1rem; }
 .quote-review-title { display: flex; justify-content: space-between; gap: 1rem; color: var(--moss); font-size: 0.78rem; }
 .quote-review-title strong::before { display: inline-block; margin-right: 0.4rem; content: "✓"; }
@@ -229,7 +241,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .passport-hero, .passport-section-heading, .compare-picker, .activation-panel-heading { align-items: start; flex-direction: column; }
   .passport-status { justify-items: start; min-width: 0; }
   .fact-grid, .metric-grid, .trust-boundary { grid-template-columns: 1fr; }
-  .activation-form, .quote-review dl, .skill-contract-grid { grid-template-columns: 1fr; }
+  .activation-form, .quote-review dl, .skill-contract-grid, .live-skill-grid { grid-template-columns: 1fr; }
   .receipt-list a { grid-template-columns: 1fr; gap: 0.35rem; }
   .evidence-tier-grid, .provenance-notes { grid-template-columns: 1fr; }
 }
