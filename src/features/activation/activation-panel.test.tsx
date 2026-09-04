@@ -9,7 +9,7 @@ import {
   loadBrowserActivationReceipt,
   saveBrowserActivationReceipt,
 } from "./browser-wallet";
-import { createSignedQuote } from "./quote";
+import { createSignedQuote, type ReferenceSellerTask } from "./quote";
 import { ActivationPanel } from "./activation-panel";
 
 vi.mock("./browser-wallet", async (importOriginal) => {
@@ -46,6 +46,41 @@ async function signedQuote() {
     nonce: `0x${"22".repeat(32)}`,
   });
 }
+
+const remainingSkillTasks: Array<{ label: string; skill: ReferenceSellerTask["skill"]; task: ReferenceSellerTask }> = [
+  {
+    label: "Grid trading",
+    skill: "grid-trading",
+    task: {
+      skill: "grid-trading",
+      parameters: {
+        poolAddress: "0x145ECf200CF4Eb61e61E5E9E73eD63F8643816df",
+        lowerPrice: 0.9,
+        upperPrice: 1.1,
+        levels: 5,
+      },
+    },
+  },
+  {
+    label: "Yield optimisation",
+    skill: "yield-optimisation",
+    task: {
+      skill: "yield-optimisation",
+      parameters: { markets: ["0xD5C4C2e2facBEB59D0216D0595d63FcDc6F9A1a7"] },
+    },
+  },
+  {
+    label: "Health-factor monitoring",
+    skill: "health-factor-monitoring",
+    task: {
+      skill: "health-factor-monitoring",
+      parameters: {
+        comptrollerAddress: "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D",
+        account: "0x74258A428e94294F14a8c8308CE21259223A0187",
+      },
+    },
+  },
+];
 
 describe("reference seller activation panel", () => {
   it("keeps all four marketplace skills available as structured tasks", () => {
@@ -98,6 +133,36 @@ describe("reference seller activation panel", () => {
       action: "quote",
       task: { skill: "rebalancing", parameters: { poolAddress, rangeWidthBps: 500 } },
     });
+  });
+
+  it.each(remainingSkillTasks)("serializes and verifies the $label task contract", async ({ skill, task }) => {
+    const quote = await createSignedQuote({
+      account,
+      agentId,
+      task,
+      amount: 10_000_000_000_000_000n,
+      now: Math.floor(Date.now() / 1000),
+      ttlSeconds: 600,
+      nonce: `0x${({
+        "grid-trading": "33",
+        "yield-optimisation": "44",
+        "health-factor-monitoring": "55",
+      } as const)[skill].repeat(32)}`,
+    });
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      jsonrpc: "2.0",
+      id: "castyard-quote",
+      result: { message: { parts: [{ data: { action: "quote", quote } }] } },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetcher);
+
+    render(<ActivationPanel agentId={agentId} expectedProvider={account.address} />);
+    fireEvent.change(screen.getByLabelText("Analysis skill"), { target: { value: skill } });
+    fireEvent.click(screen.getByRole("button", { name: "Get signed quote" }));
+
+    await screen.findByText("Signature verified");
+    const request = JSON.parse(String((fetcher.mock.calls[0]?.[1] as RequestInit).body));
+    expect(request.params.message.parts[0].data).toEqual({ action: "quote", task });
   });
 
   it("rejects a quote signed by a provider other than the registered owner", async () => {
