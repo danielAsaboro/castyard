@@ -50,6 +50,11 @@ const actionLabels = {
   recover: "Reconcile router after refund",
 } as const;
 
+function hasActiveOnchainJob(receipt: BrowserActivationReceipt | undefined): boolean {
+  return Boolean(receipt && receipt.stage !== "quoted"
+    && !["completed", "cancelled", "refunded", "failed"].includes(receipt.stage));
+}
+
 function requiredString(data: FormData, key: string): string {
   const value = String(data.get(key) ?? "").trim();
   if (!value) throw new Error(`${key} is required`);
@@ -177,6 +182,10 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
 
   async function requestQuote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (hasActiveOnchainJob(receipt)) {
+      setError("Finish, cancel, or refund the active job before requesting another quote.");
+      return;
+    }
     setLoading(true);
     setError(undefined);
     setQuote(undefined);
@@ -286,6 +295,7 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
   }
 
   const nextAction = receipt ? nextBrowserActivationAction(receipt) : undefined;
+  const activeOnchainJob = hasActiveOnchainJob(receipt);
   const settlementReady = nextAction !== "waitToSettle"
     || (receipt?.settleAfter && currentTime
       ? BigInt(Math.floor(currentTime / 1_000)) > BigInt(receipt.settleAfter)
@@ -321,10 +331,11 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
         </label>
         <SkillFields key={skill} skill={skill} />
         <div className="activation-wide activation-submit-row">
-          <button className="button-primary" disabled={loading} type="submit">{loading ? "Verifying…" : "Get signed quote"}</button>
+          <button className="button-primary" disabled={loading || activeOnchainJob} type="submit">{loading ? "Verifying…" : "Get signed quote"}</button>
           <span>10-minute quote · exact task commitment · no trade execution</span>
         </div>
       </form>
+      {activeOnchainJob ? <p>Finish, cancel, or refund the active job before requesting another quote.</p> : null}
       {error ? <p className="activation-error" role="alert">{error}</p> : null}
       {quote ? (
         <div className="quote-review" aria-live="polite">

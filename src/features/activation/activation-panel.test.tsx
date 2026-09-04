@@ -191,6 +191,8 @@ describe("reference seller activation panel", () => {
 
     render(<ActivationPanel agentId={agentId} expectedProvider={account.address} />);
     await screen.findByText("Receipt state: open");
+    expect(screen.getByRole("button", { name: "Get signed quote" })).toBeDisabled();
+    expect(screen.getByText("Finish, cancel, or refund the active job before requesting another quote.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Download receipt JSON" })).toHaveAttribute("download", "castyard-erc8183-job-42.json");
     fireEvent.click(screen.getByRole("button", { name: "Reconnect wallet to resume" }));
 
