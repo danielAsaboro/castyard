@@ -1,7 +1,7 @@
-import { decodeEventLog, getAddress, type Address, type Hex } from "viem";
+import { decodeEventLog, formatUnits, getAddress, type Address, type Hex } from "viem";
 
 import { BSC_TESTNET_PROTOCOL } from "./contracts";
-import { createJobDescription, type SignedQuote } from "./quote";
+import { createJobDescription, verifySignedQuote, type SignedQuote } from "./quote";
 
 export type BrowserActivationStage =
   | "quoted"
@@ -48,6 +48,51 @@ export type BrowserActivationAction =
   | "complete"
   | "recover";
 
+export type BrowserContractCall = {
+  address: Address;
+  abi: readonly unknown[];
+  functionName: string;
+  args: readonly unknown[];
+};
+
+export type BrowserConfirmedWrite = {
+  transactionHash: Hex;
+  logs: ReadonlyArray<{ address: Address; data: Hex; topics: readonly Hex[] }>;
+};
+
+export type BrowserSellerSubmission = {
+  transactionHash: Hex;
+  deliverableHash: Hex;
+  deliverable: unknown;
+  submittedAt: bigint;
+};
+
+export type BrowserOnchainJob = {
+  id: bigint;
+  client: Address;
+  provider: Address;
+  evaluator: Address;
+  description: string;
+  budget: bigint;
+  expiredAt: bigint;
+  status: number;
+  hook: Address;
+  submittedAt: bigint;
+  deliverable: Hex;
+};
+
+export interface BrowserActivationDependencies {
+  now(): number;
+  buyer: Address;
+  expectedProvider: Address;
+  readDisputeWindow(): Promise<bigint>;
+  readTokenBalance(buyer: Address): Promise<bigint>;
+  readTokenAllowance(buyer: Address, spender: Address): Promise<bigint>;
+  readJob(jobId: bigint): Promise<BrowserOnchainJob>;
+  write(call: BrowserContractCall): Promise<BrowserConfirmedWrite>;
+  notifySeller(jobId: bigint, quote: SignedQuote): Promise<BrowserSellerSubmission>;
+}
+
 export const jobCreatedEvent = [{
   type: "event",
   name: "JobCreated",
@@ -89,6 +134,29 @@ export const commerceBrowserAbi = [
   },
   {
     type: "function",
+    name: "getJob",
+    stateMutability: "view",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [{
+      name: "",
+      type: "tuple",
+      components: [
+        { name: "id", type: "uint256" },
+        { name: "client", type: "address" },
+        { name: "provider", type: "address" },
+        { name: "evaluator", type: "address" },
+        { name: "description", type: "string" },
+        { name: "budget", type: "uint256" },
+        { name: "expiredAt", type: "uint256" },
+        { name: "status", type: "uint8" },
+        { name: "hook", type: "address" },
+        { name: "submittedAt", type: "uint256" },
+        { name: "deliverable", type: "bytes32" },
+      ],
+    }],
+  },
+  {
+    type: "function",
     name: "fund",
     stateMutability: "nonpayable",
     inputs: [
@@ -126,8 +194,6 @@ export const erc20ApprovalAbi = [{
 }] as const;
 
 export function buildBrowserActivationCalls(quote: SignedQuote, disputeWindow: bigint, now: number) {
-  if (quote.chainId !== BSC_TESTNET_PROTOCOL.chainId) throw new Error("Quote must target BSC testnet");
-  if (getAddress(quote.commerce) !== getAddress(BSC_TESTNET_PROTOCOL.commerce)) throw new Error("Unexpected commerce contract");
   if (getAddress(quote.paymentToken) !== getAddress(BSC_TESTNET_PROTOCOL.paymentToken)) throw new Error("Unexpected payment token");
   if (!Number.isSafeInteger(now) || now <= 0) throw new Error("Invalid activation time");
   if (disputeWindow <= 0n) throw new Error("Invalid dispute window");
@@ -194,6 +260,168 @@ export function nextBrowserActivationAction(receipt: BrowserActivationReceipt): 
     case "completed": return "complete";
     case "failed": return "recover";
   }
+}
+
+function requireJobId(receipt: BrowserActivationReceipt): bigint {
+  if (!receipt.jobId || !/^[1-9][0-9]{0,77}$/.test(receipt.jobId)) {
+    throw new Error("Activation receipt has no valid ERC-8183 job ID");
+  }
+  return BigInt(receipt.jobId);
+}
+
+function bindJobId(call: BrowserContractCall, jobId: bigint): BrowserContractCall {
+  return { ...call, args: [jobId, ...call.args.slice(1)] };
+}
+
+function progressed(
+  receipt: BrowserActivationReceipt,
+  now: number,
+  patch: Partial<BrowserActivationReceipt>,
+): BrowserActivationReceipt {
+  return {
+    ...receipt,
+    ...patch,
+    transactions: { ...receipt.transactions, ...patch.transactions },
+    error: undefined,
+    updatedAt: new Date(now * 1_000).toISOString(),
+  };
+}
+
+function validateOnchainJob(
+  job: BrowserOnchainJob,
+  receipt: BrowserActivationReceipt,
+  jobId: bigint,
+  now: number,
+  expectedStatus: number,
+  requireBudget: boolean,
+) {
+  if (job.id !== jobId) throw new Error("On-chain ERC-8183 job ID does not match the receipt");
+  if (getAddress(job.client) !== getAddress(receipt.buyer)) throw new Error("On-chain ERC-8183 client does not match the receipt buyer");
+  if (getAddress(job.provider) !== getAddress(receipt.quote.provider)) throw new Error("On-chain ERC-8183 provider does not match the signed quote");
+  if (getAddress(job.evaluator) !== getAddress(BSC_TESTNET_PROTOCOL.evaluatorRouter)) throw new Error("On-chain ERC-8183 evaluator is not the approved router");
+  if (getAddress(job.hook) !== getAddress(BSC_TESTNET_PROTOCOL.evaluatorRouter)) throw new Error("On-chain ERC-8183 hook is not the approved router");
+  if (job.description !== createJobDescription(receipt.quote)) throw new Error("On-chain ERC-8183 description commitment does not match the signed quote");
+  if (job.expiredAt <= BigInt(now)) throw new Error("On-chain ERC-8183 job has expired");
+  if (job.status !== expectedStatus) throw new Error(`On-chain ERC-8183 status is ${job.status}, expected ${expectedStatus}`);
+  if (requireBudget && job.budget !== BigInt(receipt.quote.amount)) {
+    throw new Error("On-chain ERC-8183 budget does not match the signed quote");
+  }
+  if (expectedStatus === 2 && receipt.deliverableHash
+    && job.deliverable.toLowerCase() !== receipt.deliverableHash.toLowerCase()) {
+    throw new Error("On-chain ERC-8183 deliverable does not match the receipt");
+  }
+}
+
+export async function advanceBrowserActivation(
+  receipt: BrowserActivationReceipt,
+  dependencies: BrowserActivationDependencies,
+): Promise<BrowserActivationReceipt> {
+  const now = dependencies.now();
+  if (!Number.isSafeInteger(now) || now <= 0) throw new Error("Invalid activation time");
+  if (getAddress(dependencies.buyer) !== getAddress(receipt.buyer)) {
+    throw new Error("Connected wallet does not match the activation receipt buyer");
+  }
+  const action = nextBrowserActivationAction(receipt);
+
+  if (["createJob", "registerJob", "setBudget", "approve", "fund", "notifySeller"].includes(action)) {
+    await verifySignedQuote(receipt.quote, {
+      expectedProvider: dependencies.expectedProvider,
+      now,
+      usedNonces: new Set(),
+    });
+  }
+
+  const disputeWindow = await dependencies.readDisputeWindow();
+  const calls = buildBrowserActivationCalls(receipt.quote, disputeWindow, now);
+
+  if (action === "createJob") {
+    const balance = await dependencies.readTokenBalance(receipt.buyer);
+    const amount = BigInt(receipt.quote.amount);
+    if (balance < amount) {
+      throw new Error(`Buyer needs at least ${formatUnits(amount, 18)} U before creating a job`);
+    }
+    const result = await dependencies.write(calls.createJob);
+    const jobId = parseCreatedJobId(result.logs);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, false);
+    return progressed(receipt, now, {
+      stage: "open",
+      jobId: jobId.toString(),
+      transactions: { createJob: result.transactionHash },
+    });
+  }
+
+  if (action === "registerJob") {
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, false);
+    const result = await dependencies.write(bindJobId(calls.registerJob, jobId));
+    return progressed(receipt, now, {
+      stage: "registered",
+      transactions: { registerJob: result.transactionHash },
+    });
+  }
+
+  if (action === "setBudget") {
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, false);
+    const result = await dependencies.write(bindJobId(calls.setBudget, jobId));
+    return progressed(receipt, now, {
+      stage: "budgeted",
+      transactions: { setBudget: result.transactionHash },
+    });
+  }
+
+  if (action === "approve") {
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, true);
+    const allowance = await dependencies.readTokenAllowance(receipt.buyer, BSC_TESTNET_PROTOCOL.commerce);
+    if (allowance >= BigInt(receipt.quote.amount)) {
+      return progressed(receipt, now, { stage: "approved" });
+    }
+    const result = await dependencies.write(calls.approve);
+    return progressed(receipt, now, {
+      stage: "approved",
+      transactions: { approve: result.transactionHash },
+    });
+  }
+
+  if (action === "fund") {
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, true);
+    const result = await dependencies.write(bindJobId(calls.fund, jobId));
+    return progressed(receipt, now, {
+      stage: "funded",
+      transactions: { fund: result.transactionHash },
+    });
+  }
+
+  if (action === "notifySeller") {
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 1, true);
+    const result = await dependencies.notifySeller(jobId, receipt.quote);
+    return progressed(receipt, now, {
+      stage: "submitted",
+      deliverableHash: result.deliverableHash,
+      deliverable: result.deliverable,
+      settleAfter: (result.submittedAt + disputeWindow).toString(),
+      transactions: { submit: result.transactionHash },
+    });
+  }
+
+  if (action === "waitToSettle") {
+    const settleAfter = BigInt(receipt.settleAfter ?? "0");
+    if (settleAfter <= 0n) throw new Error("Activation receipt has no valid settlement time");
+    if (BigInt(now) <= settleAfter) throw new Error(`Dispute window is still open until unix ${settleAfter}`);
+    const jobId = requireJobId(receipt);
+    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 2, true);
+    const result = await dependencies.write(bindJobId(calls.settle, jobId));
+    return progressed(receipt, now, {
+      stage: "completed",
+      transactions: { settle: result.transactionHash },
+    });
+  }
+
+  if (action === "complete") return receipt;
+  throw new Error("Failed activation receipt requires authoritative recovery before another write");
 }
 
 export function parseCreatedJobId(logs: ReadonlyArray<{ address: Address; data: Hex; topics: readonly Hex[] }>): bigint {

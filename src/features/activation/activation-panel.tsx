@@ -1,8 +1,20 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { formatUnits, type Address } from "viem";
+import { useEffect, useState, type FormEvent } from "react";
+import { formatUnits, getAddress, type Address } from "viem";
 
+import {
+  advanceBrowserActivation,
+  nextBrowserActivationAction,
+  type BrowserActivationDependencies,
+  type BrowserActivationReceipt,
+} from "./browser-lifecycle";
+import {
+  connectBrowserActivation,
+  createInitialBrowserReceipt,
+  loadBrowserActivationReceipt,
+  saveBrowserActivationReceipt,
+} from "./browser-wallet";
 import { verifySignedQuote, type ReferenceSellerTask, type SignedQuote } from "./quote";
 
 type Skill = ReferenceSellerTask["skill"];
@@ -13,6 +25,18 @@ const skillOptions: { value: Skill; label: string }[] = [
   { value: "yield-optimisation", label: "Yield optimisation" },
   { value: "health-factor-monitoring", label: "Health-factor monitoring" },
 ];
+
+const actionLabels = {
+  createJob: "1. Create ERC-8183 job",
+  registerJob: "2. Register evaluation policy",
+  setBudget: "3. Set exact job budget",
+  approve: "4. Approve exact U amount",
+  fund: "5. Fund escrow",
+  notifySeller: "6. Notify seller and verify delivery",
+  waitToSettle: "7. Settle after dispute window",
+  complete: "Lifecycle complete",
+  recover: "Recover from chain state",
+} as const;
 
 function requiredString(data: FormData, key: string): string {
   const value = String(data.get(key) ?? "").trim();
@@ -102,8 +126,26 @@ function SkillFields({ skill }: { skill: Skill }) {
 export function ActivationPanel({ agentId, expectedProvider }: { agentId: string; expectedProvider: Address }) {
   const [skill, setSkill] = useState<Skill>("rebalancing");
   const [quote, setQuote] = useState<SignedQuote>();
+  const [receipt, setReceipt] = useState<BrowserActivationReceipt>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [walletDependencies, setWalletDependencies] = useState<BrowserActivationDependencies>();
+  const [currentTime, setCurrentTime] = useState<number>();
+
+  useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
+      const restored = loadBrowserActivationReceipt(agentId);
+      if (restored) {
+        setReceipt(restored);
+        setQuote(restored.quote);
+      }
+    }, 0);
+    const clock = window.setInterval(() => setCurrentTime(Date.now()), 1_000);
+    return () => {
+      window.clearTimeout(restoreTimer);
+      window.clearInterval(clock);
+    };
+  }, [agentId]);
 
   async function requestQuote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,12 +179,57 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
       });
       if (verified.agentId !== agentId) throw new Error("Quote agent does not match this passport");
       setQuote(verified);
+      setReceipt(undefined);
+      setWalletDependencies(undefined);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Quote request failed");
     } finally {
       setLoading(false);
     }
   }
+
+  async function connectWallet() {
+    if (!quote) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const connected = await connectBrowserActivation(expectedProvider);
+      const nextReceipt = receipt?.quote.nonce === quote.nonce
+        ? receipt
+        : createInitialBrowserReceipt(quote, connected.buyer);
+      if (getAddress(nextReceipt.buyer) !== connected.buyer) {
+        throw new Error(`Reconnect the original buyer wallet ${nextReceipt.buyer} to resume this receipt`);
+      }
+      setWalletDependencies(connected.dependencies);
+      saveBrowserActivationReceipt(nextReceipt);
+      setReceipt(nextReceipt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Browser wallet connection failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function advanceLifecycle() {
+    if (!receipt || !walletDependencies) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const nextReceipt = await advanceBrowserActivation(receipt, walletDependencies);
+      saveBrowserActivationReceipt(nextReceipt);
+      setReceipt(nextReceipt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "ERC-8183 activation step failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const nextAction = receipt ? nextBrowserActivationAction(receipt) : undefined;
+  const settlementReady = nextAction !== "waitToSettle"
+    || (receipt?.settleAfter && currentTime
+      ? BigInt(Math.floor(currentTime / 1_000)) > BigInt(receipt.settleAfter)
+      : false);
 
   return (
     <section className="activation-panel paper-panel" aria-labelledby="activation-heading">
@@ -180,9 +267,41 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
             <div><dt>Task commitment</dt><dd>{quote.taskCommitment}</dd></div>
           </dl>
           <p>
-            The quote is ready for the standard create → register → budget → approve → fund lifecycle.
-            Browser wallet writes remain unavailable until that path has its own verified end-to-end receipt.
+            Each numbered write opens a separate browser-wallet approval. Castyard preflights the call and records
+            only confirmed transaction receipts; the seller is notified only after escrow is funded.
           </p>
+          {!receipt || !walletDependencies ? (
+            <button className="button-primary activation-wallet-button" disabled={loading} onClick={connectWallet} type="button">
+              {receipt ? "Reconnect wallet to resume" : "Connect wallet and start"}
+            </button>
+          ) : nextAction && nextAction !== "complete" ? (
+            <button
+              className="button-primary activation-wallet-button"
+              disabled={loading || !settlementReady}
+              onClick={advanceLifecycle}
+              type="button"
+            >
+              {loading ? "Waiting for confirmation…" : actionLabels[nextAction]}
+            </button>
+          ) : null}
+          {receipt ? (
+            <div className="activation-receipt" aria-live="polite">
+              <strong>Receipt state: {receipt.stage}</strong>
+              <span>Buyer {receipt.buyer}</span>
+              {receipt.jobId ? <span>ERC-8183 job #{receipt.jobId}</span> : null}
+              {receipt.settleAfter && !settlementReady
+                ? <span>Settlement unlocks after {new Date(Number(receipt.settleAfter) * 1_000).toLocaleString()}</span>
+                : null}
+              <ol>
+                {Object.entries(receipt.transactions).map(([step, hash]) => (
+                  <li key={step}>
+                    <span>{step}</span>
+                    <a href={`https://testnet.bscscan.com/tx/${hash}`} rel="noreferrer" target="_blank">{hash}</a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

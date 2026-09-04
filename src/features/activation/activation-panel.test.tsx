@@ -1,15 +1,38 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { privateKeyToAccount } from "viem/accounts";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { BrowserActivationDependencies } from "./browser-lifecycle";
+import {
+  connectBrowserActivation,
+  loadBrowserActivationReceipt,
+  saveBrowserActivationReceipt,
+} from "./browser-wallet";
 import { createSignedQuote } from "./quote";
 import { ActivationPanel } from "./activation-panel";
+
+vi.mock("./browser-wallet", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./browser-wallet")>();
+  return {
+    ...actual,
+    connectBrowserActivation: vi.fn(),
+    loadBrowserActivationReceipt: vi.fn(),
+    saveBrowserActivationReceipt: vi.fn(),
+  };
+});
 
 const account = privateKeyToAccount(`0x${"11".repeat(32)}`);
 const agentId = "97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830";
 const poolAddress = "0x1111111111111111111111111111111111111111";
 
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => {
+  vi.mocked(loadBrowserActivationReceipt).mockReturnValue(null);
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 
 async function signedQuote() {
   return createSignedQuote({
@@ -79,5 +102,40 @@ describe("reference seller activation panel", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Unexpected quote provider");
     expect(screen.queryByText("Signature verified")).not.toBeInTheDocument();
+  });
+
+  it("connects an explicit browser buyer and starts a resumable receipt", async () => {
+    const quote = await signedQuote();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      jsonrpc: "2.0",
+      id: "castyard-quote",
+      result: { message: { parts: [{ data: { action: "quote", quote } }] } },
+    }), { status: 200 })));
+    const buyer = "0x291DB336D8b50C373F05045155c0fA7CdECe1451" as const;
+    const dependencies: BrowserActivationDependencies = {
+      now: () => Math.floor(Date.now() / 1_000),
+      buyer,
+      expectedProvider: account.address,
+      readDisputeWindow: async () => 3_600n,
+      readTokenBalance: async () => BigInt(quote.amount),
+      readTokenAllowance: async () => 0n,
+      readJob: async () => { throw new Error("not used by this test"); },
+      write: async () => { throw new Error("not used by this test"); },
+      notifySeller: async () => { throw new Error("not used by this test"); },
+    };
+    vi.mocked(connectBrowserActivation).mockResolvedValue({ buyer, dependencies });
+
+    render(<ActivationPanel agentId={agentId} expectedProvider={account.address} />);
+    fireEvent.change(screen.getByLabelText("PancakeSwap V3 pool"), { target: { value: poolAddress } });
+    fireEvent.change(screen.getByLabelText("Target range width (bps)"), { target: { value: "500" } });
+    fireEvent.click(screen.getByRole("button", { name: "Get signed quote" }));
+    await screen.findByText("Signature verified");
+    fireEvent.click(screen.getByRole("button", { name: "Connect wallet and start" }));
+
+    await waitFor(() => expect(screen.getByText("Receipt state: quoted")).toBeInTheDocument());
+    expect(screen.getByText(`Buyer ${buyer}`)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1. Create ERC-8183 job" })).toBeInTheDocument();
+    expect(connectBrowserActivation).toHaveBeenCalledWith(account.address);
+    expect(saveBrowserActivationReceipt).toHaveBeenCalledWith(expect.objectContaining({ buyer, stage: "quoted", quote }));
   });
 });
