@@ -141,6 +141,7 @@ npm run build
 npm run smoke:live
 npm run smoke:catalogue
 npm run smoke:reference-seller
+npm run smoke:browser-activation
 npm run check:boundary
 git diff --check
 ```
@@ -149,9 +150,11 @@ git diff --check
 
 `smoke:catalogue` walks every current page for all judged category queries on both supported BSC networks, verifies chain boundaries and canonical identities, then exercises a filtered marketplace URL. It performs no chain writes.
 
+`smoke:browser-activation` obtains and verifies a fresh production quote, reads the live BSC testnet policy and buyer balance, and simulates the exact browser `createJob` call. It performs no chain write and reports that boundary explicitly.
+
 ## Security and activation boundary
 
-Castyard exposes structured browser task review and cryptographically verified signed quotes on the registered reference-seller passport, but it does not yet expose a browser transaction button. The public reference seller also exposes its A2A quote endpoint and provider callback. The server validates chain, agent identity, provider, payment token, exact amount, expiry, task commitment, funded job state, nonce, and receipt before accepting work. The four current skills are read-only and cannot trade, rebalance, change a lending position, or move a user's DeFi funds.
+Castyard exposes structured browser task review, cryptographically verified signed quotes, and an explicit per-transaction browser-wallet path on the registered reference-seller passport. The client is implemented to re-read the authoritative job before every write, store confirmed receipts locally for refresh recovery, cancel before funding, reclaim and reconcile expired escrow, and verify the submitted deliverable against AgenticCommerce before settlement. Only the browser `createJob` call has been live-simulated so far; a complete browser write lifecycle is not claimed without its real receipts. The public reference seller exposes its A2A quote endpoint and provider callback. The server validates chain, agent identity, provider, payment token, exact amount, expiry, task commitment, funded job state, nonce, and receipt before accepting work. The four current skills are read-only and cannot trade, rebalance, change a lending position, or move a user's DeFi funds.
 
 The repository includes a dedicated buyer runner for reproducible testnet execution. It routes the exact-amount U-token approval through the BNB Agent SDK's MegaFuel-aware executor; a live `isSponsorable` check accepted that approval while rejecting the separate U-faucet call. Its existence is not presented as payment evidence: a funded job, provider submission, and settlement are claimed only after their real transaction receipts are recorded. Third-party protocol and x402 metadata remain labels unless Castyard has corresponding live evidence.
 

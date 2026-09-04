@@ -7,6 +7,9 @@ import { createJobDescription, createSignedQuote } from "./quote";
 import {
   buildBrowserActivationCalls,
   advanceBrowserActivation,
+  cancelOpenBrowserActivation,
+  claimExpiredBrowserActivationRefund,
+  reconcileExpiredBrowserActivation,
   nextBrowserActivationAction,
   parseCreatedJobId,
   type BrowserActivationDependencies,
@@ -249,5 +252,43 @@ describe("browser ERC-8183 lifecycle", () => {
     }));
     expect(completed.stage).toBe("completed");
     expect(completed.transactions.settle).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it("cancels an unfunded open job without requiring an unexpired quote", async () => {
+    const cancelled = await cancelOpenBrowserActivation(
+      receipt({ stage: "registered", jobId: "42", expiredAt: "10000" }),
+      dependencies({ now: () => 1_700 }),
+    );
+    expect(cancelled.stage).toBe("cancelled");
+    expect(cancelled.transactions.cancel).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it("claims expired escrow and reconciles the router in separate confirmed writes", async () => {
+    const expiredJob = {
+      id: 42n,
+      client: "0x291DB336D8b50C373F05045155c0fA7CdECe1451" as const,
+      provider: quote.provider,
+      evaluator: BSC_TESTNET_PROTOCOL.evaluatorRouter,
+      description: createJobDescription(quote),
+      budget: BigInt(quote.amount),
+      expiredAt: 1_000n,
+      status: 1,
+      hook: BSC_TESTNET_PROTOCOL.evaluatorRouter,
+      submittedAt: 0n,
+      deliverable: `0x${"00".repeat(32)}` as const,
+    };
+    const refunded = await claimExpiredBrowserActivationRefund(
+      receipt({ stage: "funded", jobId: "42", expiredAt: "1000" }),
+      dependencies({ now: () => 1_100, readJob: async () => expiredJob }),
+    );
+    expect(refunded.stage).toBe("refundClaimed");
+    expect(refunded.transactions.claimRefund).toMatch(/^0x[0-9a-f]{64}$/);
+
+    const reconciled = await reconcileExpiredBrowserActivation(
+      refunded,
+      dependencies({ now: () => 1_101, readJob: async () => ({ ...expiredJob, status: 5 }) }),
+    );
+    expect(reconciled.stage).toBe("refunded");
+    expect(reconciled.transactions.markExpired).toMatch(/^0x[0-9a-f]{64}$/);
   });
 });

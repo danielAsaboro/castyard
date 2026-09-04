@@ -152,4 +152,36 @@ describe("reference seller activation panel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Saved receipt rejected: Unexpected quote provider");
     expect(screen.queryByText("Signature verified")).not.toBeInTheDocument();
   });
+
+  it("offers explicit cancellation when an unfunded job is resumed", async () => {
+    const quote = await signedQuote();
+    const buyer = "0x291DB336D8b50C373F05045155c0fA7CdECe1451" as const;
+    const restored = {
+      ...createInitialBrowserReceipt(quote, buyer),
+      stage: "open" as const,
+      jobId: "42",
+      expiredAt: String(Math.floor(Date.now() / 1_000) + 90_000),
+      transactions: { createJob: `0x${"aa".repeat(32)}` as const },
+    };
+    const dependencies: BrowserActivationDependencies = {
+      now: () => Math.floor(Date.now() / 1_000),
+      buyer,
+      expectedProvider: account.address,
+      readDisputeWindow: async () => 86_400n,
+      readTokenBalance: async () => BigInt(quote.amount),
+      readTokenAllowance: async () => 0n,
+      readJob: async () => { throw new Error("not used by this test"); },
+      write: async () => { throw new Error("not used by this test"); },
+      notifySeller: async () => { throw new Error("not used by this test"); },
+    };
+    vi.mocked(loadBrowserActivationReceipt).mockReturnValue(restored);
+    vi.mocked(connectBrowserActivation).mockResolvedValue({ buyer, dependencies });
+
+    render(<ActivationPanel agentId={agentId} expectedProvider={account.address} />);
+    await screen.findByText("Receipt state: open");
+    fireEvent.click(screen.getByRole("button", { name: "Reconnect wallet to resume" }));
+
+    expect(await screen.findByRole("button", { name: "2. Register evaluation policy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel unfunded job" })).toBeInTheDocument();
+  });
 });

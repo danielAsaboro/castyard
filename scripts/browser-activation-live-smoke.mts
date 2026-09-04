@@ -78,5 +78,8 @@ console.log(JSON.stringify({
     approve: calls.approve.functionName,
     fund: calls.fund.functionName,
     settle: calls.settle.functionName,
+    cancel: calls.cancel.functionName,
+    claimRefund: calls.claimRefund.functionName,
+    markExpired: calls.markExpired.functionName,
   },
 }, null, 2));

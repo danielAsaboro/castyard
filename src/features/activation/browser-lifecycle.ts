@@ -12,6 +12,9 @@ export type BrowserActivationStage =
   | "funded"
   | "submitted"
   | "completed"
+  | "cancelled"
+  | "refundClaimed"
+  | "refunded"
   | "failed";
 
 export type BrowserActivationTransaction =
@@ -21,7 +24,10 @@ export type BrowserActivationTransaction =
   | "approve"
   | "fund"
   | "submit"
-  | "settle";
+  | "settle"
+  | "cancel"
+  | "claimRefund"
+  | "markExpired";
 
 export interface BrowserActivationReceipt {
   version: 1;
@@ -29,6 +35,7 @@ export interface BrowserActivationReceipt {
   buyer: Address;
   stage: BrowserActivationStage;
   jobId?: string;
+  expiredAt?: string;
   transactions: Partial<Record<BrowserActivationTransaction, Hex>>;
   deliverableHash?: Hex;
   deliverable?: unknown;
@@ -134,6 +141,24 @@ export const commerceBrowserAbi = [
   },
   {
     type: "function",
+    name: "reject",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "jobId", type: "uint256" },
+      { name: "reason", type: "bytes32" },
+      { name: "optParams", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "claimRefund",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "getJob",
     stateMutability: "view",
     inputs: [{ name: "jobId", type: "uint256" }],
@@ -181,6 +206,13 @@ export const routerBrowserAbi = [
     name: "settle",
     stateMutability: "nonpayable",
     inputs: [{ name: "jobId", type: "uint256" }, { name: "evidence", type: "bytes" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "markExpired",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }],
     outputs: [],
   },
 ] as const;
@@ -245,6 +277,24 @@ export function buildBrowserActivationCalls(quote: SignedQuote, disputeWindow: b
       functionName: "settle" as const,
       args: [emptyJobId, "0x"] as const,
     },
+    cancel: {
+      address: BSC_TESTNET_PROTOCOL.commerce,
+      abi: commerceBrowserAbi,
+      functionName: "reject" as const,
+      args: [emptyJobId, `0x${"00".repeat(32)}` as Hex, "0x"] as const,
+    },
+    claimRefund: {
+      address: BSC_TESTNET_PROTOCOL.commerce,
+      abi: commerceBrowserAbi,
+      functionName: "claimRefund" as const,
+      args: [emptyJobId] as const,
+    },
+    markExpired: {
+      address: BSC_TESTNET_PROTOCOL.evaluatorRouter,
+      abi: routerBrowserAbi,
+      functionName: "markExpired" as const,
+      args: [emptyJobId] as const,
+    },
   };
 }
 
@@ -258,6 +308,9 @@ export function nextBrowserActivationAction(receipt: BrowserActivationReceipt): 
     case "funded": return "notifySeller";
     case "submitted": return "waitToSettle";
     case "completed": return "complete";
+    case "cancelled": return "complete";
+    case "refundClaimed": return "recover";
+    case "refunded": return "complete";
     case "failed": return "recover";
   }
 }
@@ -294,6 +347,7 @@ function validateOnchainJob(
   now: number,
   expectedStatus: number,
   requireBudget: boolean,
+  requireUnexpired = true,
 ) {
   if (job.id !== jobId) throw new Error("On-chain ERC-8183 job ID does not match the receipt");
   if (getAddress(job.client) !== getAddress(receipt.buyer)) throw new Error("On-chain ERC-8183 client does not match the receipt buyer");
@@ -301,7 +355,7 @@ function validateOnchainJob(
   if (getAddress(job.evaluator) !== getAddress(BSC_TESTNET_PROTOCOL.evaluatorRouter)) throw new Error("On-chain ERC-8183 evaluator is not the approved router");
   if (getAddress(job.hook) !== getAddress(BSC_TESTNET_PROTOCOL.evaluatorRouter)) throw new Error("On-chain ERC-8183 hook is not the approved router");
   if (job.description !== createJobDescription(receipt.quote)) throw new Error("On-chain ERC-8183 description commitment does not match the signed quote");
-  if (job.expiredAt <= BigInt(now)) throw new Error("On-chain ERC-8183 job has expired");
+  if (requireUnexpired && job.expiredAt <= BigInt(now)) throw new Error("On-chain ERC-8183 job has expired");
   if (job.status !== expectedStatus) throw new Error(`On-chain ERC-8183 status is ${job.status}, expected ${expectedStatus}`);
   if (requireBudget && job.budget !== BigInt(receipt.quote.amount)) {
     throw new Error("On-chain ERC-8183 budget does not match the signed quote");
@@ -342,10 +396,12 @@ export async function advanceBrowserActivation(
     }
     const result = await dependencies.write(calls.createJob);
     const jobId = parseCreatedJobId(result.logs);
-    validateOnchainJob(await dependencies.readJob(jobId), receipt, jobId, now, 0, false);
+    const job = await dependencies.readJob(jobId);
+    validateOnchainJob(job, receipt, jobId, now, 0, false);
     return progressed(receipt, now, {
       stage: "open",
       jobId: jobId.toString(),
+      expiredAt: job.expiredAt.toString(),
       transactions: { createJob: result.transactionHash },
     });
   }
@@ -422,6 +478,65 @@ export async function advanceBrowserActivation(
 
   if (action === "complete") return receipt;
   throw new Error("Failed activation receipt requires authoritative recovery before another write");
+}
+
+async function verifyHistoricalReceipt(receipt: BrowserActivationReceipt, dependencies: BrowserActivationDependencies, now: number) {
+  if (getAddress(dependencies.buyer) !== getAddress(receipt.buyer)) {
+    throw new Error("Connected wallet does not match the activation receipt buyer");
+  }
+  await verifySignedQuote(receipt.quote, {
+    expectedProvider: dependencies.expectedProvider,
+    now: Math.min(now, receipt.quote.expiresAt),
+    usedNonces: new Set(),
+  });
+}
+
+export async function cancelOpenBrowserActivation(
+  receipt: BrowserActivationReceipt,
+  dependencies: BrowserActivationDependencies,
+): Promise<BrowserActivationReceipt> {
+  if (!["open", "registered", "budgeted", "approved"].includes(receipt.stage)) {
+    throw new Error("Only an unfunded open job can be cancelled");
+  }
+  const now = dependencies.now();
+  await verifyHistoricalReceipt(receipt, dependencies, now);
+  const jobId = requireJobId(receipt);
+  const job = await dependencies.readJob(jobId);
+  validateOnchainJob(job, receipt, jobId, now, 0, false, false);
+  const calls = buildBrowserActivationCalls(receipt.quote, await dependencies.readDisputeWindow(), Math.max(1, now));
+  const result = await dependencies.write(bindJobId(calls.cancel, jobId));
+  return progressed(receipt, now, { stage: "cancelled", transactions: { cancel: result.transactionHash } });
+}
+
+export async function claimExpiredBrowserActivationRefund(
+  receipt: BrowserActivationReceipt,
+  dependencies: BrowserActivationDependencies,
+): Promise<BrowserActivationReceipt> {
+  if (receipt.stage !== "funded") throw new Error("Only a funded, undelivered job can use this refund path");
+  const now = dependencies.now();
+  await verifyHistoricalReceipt(receipt, dependencies, now);
+  const jobId = requireJobId(receipt);
+  const job = await dependencies.readJob(jobId);
+  validateOnchainJob(job, receipt, jobId, now, 1, true, false);
+  if (BigInt(now) <= job.expiredAt) throw new Error(`Job refund unlocks after unix ${job.expiredAt}`);
+  const calls = buildBrowserActivationCalls(receipt.quote, await dependencies.readDisputeWindow(), Math.max(1, now));
+  const result = await dependencies.write(bindJobId(calls.claimRefund, jobId));
+  return progressed(receipt, now, { stage: "refundClaimed", transactions: { claimRefund: result.transactionHash } });
+}
+
+export async function reconcileExpiredBrowserActivation(
+  receipt: BrowserActivationReceipt,
+  dependencies: BrowserActivationDependencies,
+): Promise<BrowserActivationReceipt> {
+  if (receipt.stage !== "refundClaimed") throw new Error("Claim the expired escrow refund before router reconciliation");
+  const now = dependencies.now();
+  await verifyHistoricalReceipt(receipt, dependencies, now);
+  const jobId = requireJobId(receipt);
+  const job = await dependencies.readJob(jobId);
+  validateOnchainJob(job, receipt, jobId, now, 5, true, false);
+  const calls = buildBrowserActivationCalls(receipt.quote, await dependencies.readDisputeWindow(), Math.max(1, now));
+  const result = await dependencies.write(bindJobId(calls.markExpired, jobId));
+  return progressed(receipt, now, { stage: "refunded", transactions: { markExpired: result.transactionHash } });
 }
 
 export function parseCreatedJobId(logs: ReadonlyArray<{ address: Address; data: Hex; topics: readonly Hex[] }>): bigint {

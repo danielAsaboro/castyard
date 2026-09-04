@@ -26,8 +26,8 @@ import type { SignedQuote } from "./quote";
 
 const BSC_TESTNET_RPC_URL = "https://data-seed-prebsc-1-s1.bnbchain.org:8545";
 const receiptKeyPrefix = "castyard:erc8183:v1:";
-const receiptStages = new Set(["quoted", "open", "registered", "budgeted", "approved", "funded", "submitted", "completed", "failed"]);
-const transactionNames = new Set(["createJob", "registerJob", "setBudget", "approve", "fund", "submit", "settle"]);
+const receiptStages = new Set(["quoted", "open", "registered", "budgeted", "approved", "funded", "submitted", "completed", "cancelled", "refundClaimed", "refunded", "failed"]);
+const transactionNames = new Set(["createJob", "registerJob", "setBudget", "approve", "fund", "submit", "settle", "cancel", "claimRefund", "markExpired"]);
 
 const policyReadAbi = [{
   type: "function",
@@ -127,6 +127,7 @@ export function loadBrowserActivationReceipt(agentId: string, storage: Storage =
     if (typeof value.stage !== "string" || !receiptStages.has(value.stage)) return null;
     if (!value.transactions || typeof value.transactions !== "object" || typeof value.updatedAt !== "string") return null;
     if (value.jobId !== undefined && (typeof value.jobId !== "string" || !/^[1-9][0-9]{0,77}$/.test(value.jobId))) return null;
+    if (value.expiredAt !== undefined && (typeof value.expiredAt !== "string" || !/^[1-9][0-9]*$/.test(value.expiredAt))) return null;
     if (value.settleAfter !== undefined && (typeof value.settleAfter !== "string" || !/^[1-9][0-9]*$/.test(value.settleAfter))) return null;
     for (const [name, hash] of Object.entries(value.transactions)) {
       if (!transactionNames.has(name) || typeof hash !== "string" || !isHex(hash, { strict: true }) || hash.length !== 66) return null;

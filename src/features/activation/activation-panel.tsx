@@ -5,7 +5,10 @@ import { formatUnits, getAddress, type Address } from "viem";
 
 import {
   advanceBrowserActivation,
+  cancelOpenBrowserActivation,
+  claimExpiredBrowserActivationRefund,
   nextBrowserActivationAction,
+  reconcileExpiredBrowserActivation,
   type BrowserActivationDependencies,
   type BrowserActivationReceipt,
 } from "./browser-lifecycle";
@@ -35,7 +38,7 @@ const actionLabels = {
   notifySeller: "6. Notify seller and verify delivery",
   waitToSettle: "7. Settle after dispute window",
   complete: "Lifecycle complete",
-  recover: "Recover from chain state",
+  recover: "Reconcile router after refund",
 } as const;
 
 function requiredString(data: FormData, key: string): string {
@@ -228,11 +231,43 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
     setLoading(true);
     setError(undefined);
     try {
-      const nextReceipt = await advanceBrowserActivation(receipt, walletDependencies);
+      const nextReceipt = receipt.stage === "refundClaimed"
+        ? await reconcileExpiredBrowserActivation(receipt, walletDependencies)
+        : await advanceBrowserActivation(receipt, walletDependencies);
       saveBrowserActivationReceipt(nextReceipt);
       setReceipt(nextReceipt);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "ERC-8183 activation step failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function cancelLifecycle() {
+    if (!receipt || !walletDependencies) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const nextReceipt = await cancelOpenBrowserActivation(receipt, walletDependencies);
+      saveBrowserActivationReceipt(nextReceipt);
+      setReceipt(nextReceipt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "ERC-8183 cancellation failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function claimRefund() {
+    if (!receipt || !walletDependencies) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const nextReceipt = await claimExpiredBrowserActivationRefund(receipt, walletDependencies);
+      saveBrowserActivationReceipt(nextReceipt);
+      setReceipt(nextReceipt);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "ERC-8183 refund failed");
     } finally {
       setLoading(false);
     }
@@ -243,6 +278,14 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
     || (receipt?.settleAfter && currentTime
       ? BigInt(Math.floor(currentTime / 1_000)) > BigInt(receipt.settleAfter)
       : false);
+  const currentUnix = currentTime ? BigInt(Math.floor(currentTime / 1_000)) : undefined;
+  const quoteExpired = currentUnix !== undefined && currentUnix > BigInt(quote?.expiresAt ?? 0);
+  const canCancel = receipt ? ["open", "registered", "budgeted", "approved"].includes(receipt.stage) : false;
+  const refundReady = receipt?.stage === "funded" && receipt.expiredAt && currentUnix !== undefined
+    ? currentUnix > BigInt(receipt.expiredAt)
+    : false;
+  const primaryDisabled = loading || !settlementReady || (Boolean(receipt) && quoteExpired
+    && !["submitted", "refundClaimed", "completed", "cancelled", "refunded"].includes(receipt.stage));
 
   return (
     <section className="activation-panel paper-panel" aria-labelledby="activation-heading">
@@ -283,6 +326,12 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
             Each numbered write opens a separate browser-wallet approval. Castyard preflights the call and records
             only confirmed transaction receipts; the seller is notified only after escrow is funded.
           </p>
+          <p className="activation-funding-help">
+            Live writes require your own funded BSC testnet wallet. The browser path has passed a read-only live
+            contract preflight; Castyard does not claim a completed browser lifecycle until its receipts exist. Funds:
+            {" "}<a href="https://www.bnbchain.org/en/testnet-faucet" rel="noreferrer" target="_blank">tBNB faucet</a>
+            {" · "}<a href="https://united-coin-u.github.io/u-faucet/" rel="noreferrer" target="_blank">official U faucet</a>.
+          </p>
           {!receipt || !walletDependencies ? (
             <button className="button-primary activation-wallet-button" disabled={loading} onClick={connectWallet} type="button">
               {receipt ? "Reconnect wallet to resume" : "Connect wallet and start"}
@@ -290,11 +339,21 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
           ) : nextAction && nextAction !== "complete" ? (
             <button
               className="button-primary activation-wallet-button"
-              disabled={loading || !settlementReady}
+              disabled={primaryDisabled || refundReady}
               onClick={advanceLifecycle}
               type="button"
             >
               {loading ? "Waiting for confirmation…" : actionLabels[nextAction]}
+            </button>
+          ) : null}
+          {receipt && walletDependencies && canCancel ? (
+            <button className="button-secondary activation-wallet-button" disabled={loading} onClick={cancelLifecycle} type="button">
+              Cancel unfunded job
+            </button>
+          ) : null}
+          {receipt && walletDependencies && refundReady ? (
+            <button className="button-secondary activation-wallet-button" disabled={loading} onClick={claimRefund} type="button">
+              Claim expired escrow refund
             </button>
           ) : null}
           {receipt ? (
@@ -305,6 +364,8 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
               {receipt.settleAfter && !settlementReady
                 ? <span>Settlement unlocks after {new Date(Number(receipt.settleAfter) * 1_000).toLocaleString()}</span>
                 : null}
+              {receipt.expiredAt ? <span>Job expiry {new Date(Number(receipt.expiredAt) * 1_000).toLocaleString()}</span> : null}
+              {quoteExpired && canCancel ? <span>The quote expired. Cancel this unfunded job before requesting a new quote.</span> : null}
               <ol>
                 {Object.entries(receipt.transactions).map(([step, hash]) => (
                   <li key={step}>
