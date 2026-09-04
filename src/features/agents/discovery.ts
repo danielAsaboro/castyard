@@ -24,6 +24,7 @@ export interface CategoryDiscovery {
 export interface DiscoveryResult {
   categories: CategoryDiscovery[];
   uniqueAgents: AgentSummary[];
+  totalAgents: number;
 }
 
 const indexedQuery: Omit<CatalogueQuery, "categories"> = {
@@ -39,7 +40,8 @@ const indexedQuery: Omit<CatalogueQuery, "categories"> = {
 export async function loadIndexedDiscovery(
   repository: Pick<CatalogueReader, "currentCount" | "search">,
 ): Promise<DiscoveryResult | undefined> {
-  if (await repository.currentCount() === 0) return undefined;
+  const totalAgents = await repository.currentCount();
+  if (totalAgents === 0) return undefined;
   const categories = await Promise.all(AGENT_CATEGORIES.map(async (category) => {
     const page = await repository.search({ ...indexedQuery, categories: [category.slug] });
     const agents = page.items.map(({ agent }) => agent);
@@ -54,7 +56,7 @@ export async function loadIndexedDiscovery(
   for (const category of categories) {
     for (const agent of category.agents) unique.set(agent.identity.agentId, agent);
   }
-  return { categories, uniqueAgents: [...unique.values()] };
+  return { categories, uniqueAgents: [...unique.values()], totalAgents };
 }
 
 async function loadCategory(
@@ -95,5 +97,6 @@ export async function loadDiscovery(fetcher: typeof fetch = fetch): Promise<Disc
       byAgentId.set(agent.identity.agentId, agent);
     }
   }
-  return { categories, uniqueAgents: [...byAgentId.values()] };
+  const uniqueAgents = [...byAgentId.values()];
+  return { categories, uniqueAgents, totalAgents: uniqueAgents.length };
 }

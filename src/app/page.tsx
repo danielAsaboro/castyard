@@ -43,7 +43,7 @@ export default async function Home() {
         </div>
         <aside className="hero-proof paper-panel" aria-label="Current marketplace observation">
           <span className="eyebrow">Current observation</span>
-          <strong>{discovery.uniqueAgents.length}</strong>
+          <strong>{discovery.totalAgents}</strong>
           <span>unique live registry records passed explicit category claim rules</span>
           <dl>
             <div><dt>Categories with results</dt><dd>{readyCategories} / 4</dd></div>

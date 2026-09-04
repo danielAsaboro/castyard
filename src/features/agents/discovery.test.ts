@@ -59,6 +59,7 @@ describe("discovery aggregation", () => {
     });
 
     expect(result?.categories.every(({ status }) => status === "ready")).toBe(true);
+    expect(result?.totalAgents).toBe(agents.length);
     expect(queries).toEqual([
       ["rebalancing"],
       ["grid-trading"],

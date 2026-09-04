@@ -142,6 +142,12 @@ ON CONFLICT(agent_id, source_name) DO UPDATE SET
   upstream_at=excluded.upstream_at, request_id=excluded.request_id`;
 
 const EVIDENCE_RANK: Record<EvidenceState, number> = { registered: 0, claimed: 1, observed: 2 };
+const CATALOGUE_REFRESH_INTERVAL_MS = 15 * 60_000;
+
+export function isCatalogueRefreshDue(startedAt: string | undefined, nowMs = Date.now()): boolean {
+  const parsed = startedAt ? Date.parse(startedAt) : Number.NaN;
+  return !Number.isFinite(parsed) || nowMs - parsed >= CATALOGUE_REFRESH_INTERVAL_MS;
+}
 
 function normalizedName(value: string): string {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("en-US");
@@ -224,8 +230,7 @@ export class CatalogueRepository {
   async refreshDue(): Promise<boolean> {
     const row = await this.db.prepare(`SELECT started_at FROM catalogue_sync_runs
       WHERE completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`).first<{ started_at: string }>();
-    const startedAt = row ? Date.parse(row.started_at) : 0;
-    return !Number.isFinite(startedAt) || Date.now() - startedAt >= 60_000;
+    return isCatalogueRefreshDue(row?.started_at);
   }
 
   async replaceSyncSnapshot(result: MarketplaceInventory): Promise<string> {

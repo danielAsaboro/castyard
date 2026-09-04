@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { parseCatalogueQuery } from "./query";
-import { buildCatalogueStatements, toFtsQuery } from "./repository";
+import { buildCatalogueStatements, isCatalogueRefreshDue, toFtsQuery } from "./repository";
 
 describe("D1 catalogue repository queries", () => {
+  it("does not schedule another full upstream crawl inside the fifteen-minute freshness window", () => {
+    const startedAt = "2026-09-04T19:20:00.000Z";
+
+    expect(isCatalogueRefreshDue(startedAt, Date.parse("2026-09-04T19:34:59.999Z"))).toBe(false);
+    expect(isCatalogueRefreshDue(startedAt, Date.parse("2026-09-04T19:35:00.000Z"))).toBe(true);
+    expect(isCatalogueRefreshDue(undefined, Date.parse("2026-09-04T19:20:00.000Z"))).toBe(true);
+  });
+
   it("compiles ordinary English and quoted phrases into bounded FTS syntax", () => {
     expect(toFtsQuery('live "grid trading" agents')).toBe('"live"* AND "grid trading" AND "agents"*');
     expect(toFtsQuery('" OR current = 1 --')).toBe('"or"* AND "current"* AND "1"*');
