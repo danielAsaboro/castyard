@@ -159,7 +159,7 @@ The repository includes a dedicated buyer runner for reproducible testnet execut
 
 - Registry feedback is displayed as reported; it is not a safety or quality score.
 - The indexed scope is the complete result set for the hackathon's judged category searches, not every unrelated ERC-8004 registration on BSC. Source coverage is recorded per query and network.
-- The first live operator integration covers rebalancing. The other three categories currently expose live registry identities and exact evidence gaps.
+- The transactional live-operator integration covers rebalancing only. Separately, the registered reference seller gives all four categories equal-depth, read-only live contract evidence; grid trading, yield optimisation, and health-factor monitoring do not yet have independent state-changing operator integrations.
 - Operator performance is based on a small live position and may include an incomplete measurement window. Negative P&L remains visible.
 - A transaction receipt proves that a transaction exists, not that it was profitable or caused by a particular strategy.
 - Public upstream availability and anonymous rate limits can produce labelled degraded states.
