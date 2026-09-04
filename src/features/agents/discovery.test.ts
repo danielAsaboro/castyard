@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import capturedRebalancer from "./sources/fixtures/8004scan-rebalancer.json";
 import categoryAgents from "./sources/fixtures/8004scan-category-agents.json";
-import { loadDiscovery } from "./discovery";
+import { loadDiscovery, loadIndexedDiscovery } from "./discovery";
+import { qualifyAgent } from "./qualify";
+import { normalize8004Agent } from "./sources/8004scan";
+import { queryCatalogue } from "@/features/catalogue/search";
 
 const bySearch: Record<string, unknown[]> = {
   rebalancing: capturedRebalancer.data,
@@ -43,6 +46,27 @@ function registryFetcher(
 }
 
 describe("discovery aggregation", () => {
+  it("builds all four homepage categories from one durable catalogue snapshot", async () => {
+    const agents = [capturedRebalancer.data[0], ...categoryAgents]
+      .map((record) => qualifyAgent(normalize8004Agent(record)));
+    const queries: string[][] = [];
+    const result = await loadIndexedDiscovery({
+      currentCount: async () => agents.length,
+      search: async (query) => {
+        queries.push(query.categories);
+        return queryCatalogue(agents, query);
+      },
+    });
+
+    expect(result?.categories.every(({ status }) => status === "ready")).toBe(true);
+    expect(queries).toEqual([
+      ["rebalancing"],
+      ["grid-trading"],
+      ["yield-optimisation"],
+      ["health-factor-monitoring"],
+    ]);
+  });
+
   it("loads every judged category from an explicit live registry query", async () => {
     const searches: string[] = [];
     const result = await loadDiscovery(registryFetcher({}, searches));

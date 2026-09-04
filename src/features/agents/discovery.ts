@@ -1,6 +1,8 @@
 import { AGENT_CATEGORIES, type AgentSummary, type SourceStamp } from "./domain";
 import { qualifyAgent } from "./qualify";
 import { fetchBscAgents, UpstreamError } from "./sources/8004scan";
+import type { CatalogueReader } from "@/features/catalogue/load";
+import type { CatalogueQuery } from "@/features/catalogue/query";
 
 const SEARCHES = [
   { category: AGENT_CATEGORIES[0], search: "rebalancing" },
@@ -22,6 +24,37 @@ export interface CategoryDiscovery {
 export interface DiscoveryResult {
   categories: CategoryDiscovery[];
   uniqueAgents: AgentSummary[];
+}
+
+const indexedQuery: Omit<CatalogueQuery, "categories"> = {
+  q: "",
+  network: "all",
+  evidence: "all",
+  rail: "all",
+  sort: "evidence",
+  page: 1,
+  perPage: 12,
+};
+
+export async function loadIndexedDiscovery(
+  repository: Pick<CatalogueReader, "currentCount" | "search">,
+): Promise<DiscoveryResult | undefined> {
+  if (await repository.currentCount() === 0) return undefined;
+  const categories = await Promise.all(AGENT_CATEGORIES.map(async (category) => {
+    const page = await repository.search({ ...indexedQuery, categories: [category.slug] });
+    const agents = page.items.map(({ agent }) => agent);
+    return {
+      category,
+      agents,
+      status: agents.length > 0 ? "ready" as const : "empty" as const,
+      source: agents[0]?.identity.source,
+    };
+  }));
+  const unique = new Map<string, AgentSummary>();
+  for (const category of categories) {
+    for (const agent of category.agents) unique.set(agent.identity.agentId, agent);
+  }
+  return { categories, uniqueAgents: [...unique.values()] };
 }
 
 async function loadCategory(

@@ -1,12 +1,29 @@
 import Link from "next/link";
+import { after } from "next/server";
 
+import { ensureCatalogueSchema, getCatalogueRepository } from "@/../db";
 import { CategoryGrid } from "@/features/agents/category-grid";
-import { loadDiscovery } from "@/features/agents/discovery";
+import { loadDiscovery, loadIndexedDiscovery } from "@/features/agents/discovery";
+import { loadMarketplaceInventory } from "@/features/catalogue/inventory";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const discovery = await loadDiscovery();
+  let discovery;
+  try {
+    await ensureCatalogueSchema();
+    const repository = getCatalogueRepository();
+    discovery = await loadIndexedDiscovery(repository);
+    if (discovery && await repository.refreshDue()) {
+      after(async () => {
+        const inventory = await loadMarketplaceInventory();
+        if (inventory.agents.length > 0) await repository.replaceSyncSnapshot(inventory);
+      });
+    }
+  } catch {
+    discovery = undefined;
+  }
+  discovery ??= await loadDiscovery();
   const readyCategories = discovery.categories.filter((entry) => entry.status === "ready").length;
 
   return (
@@ -30,8 +47,8 @@ export default async function Home() {
           <span>unique live registry records passed explicit category claim rules</span>
           <dl>
             <div><dt>Categories with results</dt><dd>{readyCategories} / 4</dd></div>
-            <div><dt>Chain</dt><dd>BNB Smart Chain · 56</dd></div>
-            <div><dt>Activation state</dt><dd>Not yet qualified</dd></div>
+            <div><dt>Networks</dt><dd>BNB Smart Chain · 56 + 97</dd></div>
+            <div><dt>Activation state</dt><dd>Signed quote live</dd></div>
           </dl>
         </aside>
       </section>
