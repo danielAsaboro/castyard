@@ -9,6 +9,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { bscTestnet } from "viem/chains";
 
 import { createJobDescription, type SignedQuote, verifySignedQuote } from "../src/features/activation/quote";
+import { sendSponsoredExactApproval } from "./sponsored-approval.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const secretPath = resolve(root, ".secrets/reference-buyer.private-key");
@@ -124,8 +125,15 @@ await save(evidence);
 
 const allowance = await client.tokenAllowance(account.address, client.commerce.address);
 if (allowance < BigInt(quote.amount)) {
-  const approved = await client.approvePaymentToken(client.commerce.address, BigInt(quote.amount));
+  const approved = await sendSponsoredExactApproval({
+    wallet,
+    publicClient,
+    paymentToken,
+    spender: client.commerce.address,
+    amount: BigInt(quote.amount),
+  });
   evidence.transactions.approve = approved.transactionHash;
+  evidence.approvalMode = "MegaFuel-sponsored exact ERC-20 approval";
   await save(evidence);
 }
 const funded = await client.fund(jobId, BigInt(quote.amount), { approveFloor: 0n });

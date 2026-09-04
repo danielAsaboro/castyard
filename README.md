@@ -153,7 +153,7 @@ git diff --check
 
 Castyard exposes structured browser task review and cryptographically verified signed quotes on the registered reference-seller passport, but it does not yet expose a browser transaction button. The public reference seller also exposes its A2A quote endpoint and provider callback. The server validates chain, agent identity, provider, payment token, exact amount, expiry, task commitment, funded job state, nonce, and receipt before accepting work. The four current skills are read-only and cannot trade, rebalance, change a lending position, or move a user's DeFi funds.
 
-The repository includes a dedicated buyer runner for reproducible testnet execution. Its existence is not presented as payment evidence: a funded job, provider submission, and settlement are claimed only after their real transaction receipts are recorded. Third-party protocol and x402 metadata remain labels unless Castyard has corresponding live evidence.
+The repository includes a dedicated buyer runner for reproducible testnet execution. It routes the exact-amount U-token approval through the BNB Agent SDK's MegaFuel-aware executor; a live `isSponsorable` check accepted that approval while rejecting the separate U-faucet call. Its existence is not presented as payment evidence: a funded job, provider submission, and settlement are claimed only after their real transaction receipts are recorded. Third-party protocol and x402 metadata remain labels unless Castyard has corresponding live evidence.
 
 ## Known limitations
 
@@ -163,7 +163,7 @@ The repository includes a dedicated buyer runner for reproducible testnet execut
 - Operator performance is based on a small live position and may include an incomplete measurement window. Negative P&L remains visible.
 - A transaction receipt proves that a transaction exists, not that it was profitable or caused by a particular strategy.
 - Public upstream availability and anonymous rate limits can produce labelled degraded states.
-- The reference seller's on-chain identity and signed quote path are verified. A complete funded-to-settled ERC-8183 receipt is still pending testnet buyer gas and U funding and is not claimed yet.
+- The reference seller's on-chain identity and signed quote path are verified. A complete funded-to-settled ERC-8183 receipt is still pending the buyer's one-time native-gas transaction to the official U faucet and is not claimed yet; the subsequent exact U approval is MegaFuel-sponsorable.
 
 ## License
 
