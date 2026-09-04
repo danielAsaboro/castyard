@@ -12,7 +12,7 @@ export function CompareTable({ comparison }: { comparison: Comparison }) {
             <th scope="col">Evidence field</th>
             {comparison.agents.map((agent) => (
               <th scope="col" key={agent.identity.agentId}>
-                <Link href={`/agents/${agent.identity.agentId}`}>{agent.identity.name}</Link>
+                <Link href={`/agents/${agent.identity.agentId}`} prefetch={false}>{agent.identity.name}</Link>
                 <span>Agent #{agent.identity.erc8004AgentTokenId}</span>
               </th>
             ))}

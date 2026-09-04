@@ -16,7 +16,7 @@ export function CategoryGrid({ categories, now }: { categories: CategoryDiscover
             <ul data-testid="decision-checklist">
               {entry.category.evidenceChecklist.map((item) => <li key={item}>{item}</li>)}
             </ul>
-            <Link href={`/categories/${entry.category.slug}`}>View category requirements</Link>
+            <Link href={`/categories/${entry.category.slug}`} prefetch={false}>View category requirements</Link>
           </div>
           <div className="category-result">
             {entry.status === "ready" && entry.agents[0] ? (

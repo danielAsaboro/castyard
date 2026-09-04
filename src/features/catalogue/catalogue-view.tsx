@@ -111,7 +111,7 @@ export function CatalogueView({
             </select>
           </label>
           <button className="button-primary" type="submit">Apply filters</button>
-          <Link className="clear-filters" href="/agents">Clear all filters</Link>
+          <Link className="clear-filters" href="/agents" prefetch={false}>Clear all filters</Link>
         </form>
       </aside>
 
@@ -141,7 +141,7 @@ export function CatalogueView({
         {activeFilters.length ? (
           <div className="active-filters" aria-label="Active filters">
             {activeFilters.map((filter) => (
-              <Link href={href(query, filter.remove)} key={filter.key}>
+              <Link href={href(query, filter.remove)} key={filter.key} prefetch={false}>
                 <span className="active-filter-label">{filter.label}</span><span aria-hidden="true"> ×</span>
               </Link>
             ))}
@@ -161,14 +161,14 @@ export function CatalogueView({
 
         {result.pageCount > 1 ? (
           <nav className="pagination" aria-label="Catalogue pages">
-            {result.page > 1 ? <Link href={pageHref(query, result.page - 1)} aria-label="Previous page">Previous</Link> : null}
+            {result.page > 1 ? <Link href={pageHref(query, result.page - 1)} aria-label="Previous page" prefetch={false}>Previous</Link> : null}
             {visiblePages(result.page, result.pageCount).map((page, index, pages) => (
               <span key={page} className="pagination-slot">
                 {index > 0 && page - pages[index - 1] > 1 ? <span aria-hidden="true">…</span> : null}
-                <Link href={pageHref(query, page)} aria-label={`Page ${page}`} aria-current={page === result.page ? "page" : undefined}>{page}</Link>
+                <Link href={pageHref(query, page)} aria-label={`Page ${page}`} aria-current={page === result.page ? "page" : undefined} prefetch={false}>{page}</Link>
               </span>
             ))}
-            {result.page < result.pageCount ? <Link href={pageHref(query, result.page + 1)} aria-label="Next page">Next</Link> : null}
+            {result.page < result.pageCount ? <Link href={pageHref(query, result.page + 1)} aria-label="Next page" prefetch={false}>Next</Link> : null}
           </nav>
         ) : null}
       </div>

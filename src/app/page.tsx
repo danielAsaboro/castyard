@@ -37,8 +37,8 @@ export default async function Home() {
             mistaking registration, reputation, or operator claims for verified outcomes.
           </p>
           <div className="hero-actions">
-            <Link className="button-primary" href="/agents">Browse live BSC agents</Link>
-            <Link className="button-secondary" href="/evidence">How evidence works</Link>
+            <Link className="button-primary" href="/agents" prefetch={false}>Browse live BSC agents</Link>
+            <Link className="button-secondary" href="/evidence" prefetch={false}>How evidence works</Link>
           </div>
         </div>
         <aside className="hero-proof paper-panel" aria-label="Current marketplace observation">
