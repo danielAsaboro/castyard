@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BrowserActivationDependencies } from "./browser-lifecycle";
 import {
   connectBrowserActivation,
+  createInitialBrowserReceipt,
   loadBrowserActivationReceipt,
   saveBrowserActivationReceipt,
 } from "./browser-wallet";
@@ -137,5 +138,18 @@ describe("reference seller activation panel", () => {
     expect(screen.getByRole("button", { name: "1. Create ERC-8183 job" })).toBeInTheDocument();
     expect(connectBrowserActivation).toHaveBeenCalledWith(account.address);
     expect(saveBrowserActivationReceipt).toHaveBeenCalledWith(expect.objectContaining({ buyer, stage: "quoted", quote }));
+  });
+
+  it("re-verifies a saved receipt before displaying its quote as trusted", async () => {
+    const restored = createInitialBrowserReceipt(
+      await signedQuote(),
+      "0x291DB336D8b50C373F05045155c0fA7CdECe1451",
+    );
+    vi.mocked(loadBrowserActivationReceipt).mockReturnValue(restored);
+
+    render(<ActivationPanel agentId={agentId} expectedProvider="0x3333333333333333333333333333333333333333" />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Saved receipt rejected: Unexpected quote provider");
+    expect(screen.queryByText("Signature verified")).not.toBeInTheDocument();
   });
 });

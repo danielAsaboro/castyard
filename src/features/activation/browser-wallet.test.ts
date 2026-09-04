@@ -68,6 +68,16 @@ describe("browser activation receipt persistence", () => {
       updatedAt: "2026-09-04T00:00:00.000Z",
     }));
     expect(loadBrowserActivationReceipt(agentId, storage)).toBeNull();
+
+    storage.setItem(`castyard:erc8183:v1:${agentId}`, JSON.stringify({
+      version: 1,
+      quote: { agentId },
+      buyer: "0x291DB336D8b50C373F05045155c0fA7CdECe1451",
+      stage: "invented-success",
+      transactions: { settle: "not-a-hash" },
+      updatedAt: "2026-09-04T00:00:00.000Z",
+    }));
+    expect(loadBrowserActivationReceipt(agentId, storage)).toBeNull();
   });
 
   it("recovers a submitted seller receipt after an idempotent retry conflict", async () => {

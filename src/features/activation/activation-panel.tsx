@@ -136,8 +136,21 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
     const restoreTimer = window.setTimeout(() => {
       const restored = loadBrowserActivationReceipt(agentId);
       if (restored) {
-        setReceipt(restored);
-        setQuote(restored.quote);
+        const submitted = restored.stage === "submitted" || restored.stage === "completed";
+        const verifyAt = submitted
+          ? Math.min(Math.floor(Date.now() / 1_000), restored.quote.expiresAt)
+          : Math.floor(Date.now() / 1_000);
+        void verifySignedQuote(restored.quote, {
+          expectedProvider,
+          now: verifyAt,
+          usedNonces: new Set(),
+        }).then((verified) => {
+          if (verified.agentId !== agentId) throw new Error("Saved receipt agent does not match this passport");
+          setReceipt({ ...restored, quote: verified });
+          setQuote(verified);
+        }).catch((caught) => {
+          setError(caught instanceof Error ? `Saved receipt rejected: ${caught.message}` : "Saved receipt rejected");
+        });
       }
     }, 0);
     const clock = window.setInterval(() => setCurrentTime(Date.now()), 1_000);
@@ -145,7 +158,7 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
       window.clearTimeout(restoreTimer);
       window.clearInterval(clock);
     };
-  }, [agentId]);
+  }, [agentId, expectedProvider]);
 
   async function requestQuote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
