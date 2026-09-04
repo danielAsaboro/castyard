@@ -1,4 +1,4 @@
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- vinext beta Link navigation throws in production. */
 import { after } from "next/server";
 
 import { ensureCatalogueSchema, getCatalogueRepository } from "@/../db";
@@ -37,8 +37,8 @@ export default async function Home() {
             mistaking registration, reputation, or operator claims for verified outcomes.
           </p>
           <div className="hero-actions">
-            <Link className="button-primary" href="/agents" prefetch={false}>Browse live BSC agents</Link>
-            <Link className="button-secondary" href="/evidence" prefetch={false}>How evidence works</Link>
+            <a className="button-primary" href="/agents">Browse live BSC agents</a>
+            <a className="button-secondary" href="/evidence">How evidence works</a>
           </div>
         </div>
         <aside className="hero-proof paper-panel" aria-label="Current marketplace observation">

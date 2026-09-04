@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { UpstreamState } from "@/components/upstream-state";
 import { AgentCard } from "./agent-card";
 import type { CategoryDiscovery } from "./discovery";
@@ -16,7 +14,7 @@ export function CategoryGrid({ categories, now }: { categories: CategoryDiscover
             <ul data-testid="decision-checklist">
               {entry.category.evidenceChecklist.map((item) => <li key={item}>{item}</li>)}
             </ul>
-            <Link href={`/categories/${entry.category.slug}`} prefetch={false}>View category requirements</Link>
+            <a href={`/categories/${entry.category.slug}`}>View category requirements</a>
           </div>
           <div className="category-result">
             {entry.status === "ready" && entry.agents[0] ? (

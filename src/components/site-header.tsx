@@ -1,16 +1,15 @@
-import Link from "next/link";
-
+/* eslint-disable @next/next/no-html-link-for-pages -- vinext beta Link navigation throws in production. */
 export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container header-row">
-        <Link className="wordmark" href="/" aria-label="Castyard home" prefetch={false}>
+        <a className="wordmark" href="/" aria-label="Castyard home">
           Castyard<span className="wordmark-dot">.</span>
-        </Link>
+        </a>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <Link href="/agents" prefetch={false}>Discover</Link>
-          <Link href="/compare" prefetch={false}>Compare</Link>
-          <Link href="/evidence" prefetch={false}>Evidence</Link>
+          <a href="/agents">Discover</a>
+          <a href="/compare">Compare</a>
+          <a href="/evidence">Evidence</a>
         </nav>
         <span className="source-live">BSC source online</span>
       </div>
