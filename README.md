@@ -28,7 +28,7 @@ The current rebalancing passport adds live operator observations and BscScan rec
 
 ## Castyard Reference Seller
 
-Castyard also operates one standards-based BSC testnet seller with equal-depth, read-only implementations for all four categories. It is discoverable as ERC-8004 agent `97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830` and exposes an A2A 1.0 JSON-RPC interface.
+Castyard also operates one standards-based BSC testnet seller with equal-depth, read-only implementations for all four categories. It is discoverable as ERC-8004 agent `97:0x8004a818bfb912233c491871b3d84c89a494bd9e:1830` and exposes an A2A 1.0 JSON-RPC interface. The public `/evidence` route executes each implementation against current PancakeSwap V3 or Venus contracts and publishes its BSC block, observation time, calls, returned data, and assumptions.
 
 - AgentCard: `/.well-known/agent-card.json`
 - ERC-8004 endpoint-domain record: `/.well-known/agent-registration.json`
@@ -63,7 +63,7 @@ The comparison table has no overall score or winner. Missing observations are sh
 - Read-only operator origin: `https://bnb-lp-api.172-104-171-139.nip.io`
 - Read endpoints: `/health`, `/metadata`, `/status`, `/strategy`, `/performance`, `/positions`, `/transactions`
 - Observed owner: `0x20f1ca5d1e5a3ee94c29dbf95e6bf6cea6a8d64b`
-- PancakeSwap V3 position NFT ID: `7116214`
+- PancakeSwap V3 position NFT ID observed on 2026-09-04: `7319347`
 - Receipt explorer: `https://bscscan.com`
 
 The ERC-8004 agent token and PancakeSwap position NFT are separate identifiers. Castyard's adapter preserves that distinction and rejects chain or wallet mismatches.
@@ -113,7 +113,7 @@ The source adapters are server-side. They use HTTPS allowlists, GET-only request
 - `/categories/health-factor-monitoring`;
 - `/agents/:agentId` — source-linked Agent Passport;
 - `/compare` — shareable, field-by-field comparison;
-- `/evidence` — evidence and provenance guide.
+- `/evidence` — evidence guide plus four freshness-labelled BSC testnet skill observations;
 - `/.well-known/agent-card.json` — public A2A 1.0 AgentCard;
 - `/.well-known/agent-registration.json` — ERC-8004 endpoint-domain verification;
 - `/api/reference-seller/a2a` — signed quote JSON-RPC endpoint;
