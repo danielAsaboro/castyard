@@ -12,6 +12,7 @@
     "smoke:live": "node scripts/live-smoke.mjs",
     "smoke:catalogue": "node scripts/catalogue-live-smoke.mjs",
     "smoke:reference-seller": "tsx scripts/reference-seller-live-smoke.mts",
+    "smoke:browser-activation": "tsx scripts/browser-activation-live-smoke.mts",
     "wallet:reference-seller": "tsx scripts/reference-seller-wallet.mts",
     "wallet:reference-buyer": "tsx scripts/reference-buyer-wallet.mts",
     "fund:reference-buyer": "tsx scripts/reference-buyer-fund.mts",
