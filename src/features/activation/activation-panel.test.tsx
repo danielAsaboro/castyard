@@ -56,10 +56,22 @@ describe("reference seller activation panel", () => {
     expect(screen.getByRole("option", { name: "Grid trading" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Yield optimisation" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Health-factor monitoring" })).toBeInTheDocument();
+    expect(screen.getByLabelText("PancakeSwap V3 pool")).toHaveValue("0x145ECf200CF4Eb61e61E5E9E73eD63F8643816df");
+    expect(screen.getByLabelText("Target range width (bps)")).toHaveValue(1000);
+
+    fireEvent.change(skill, { target: { value: "grid-trading" } });
+    expect(screen.getByLabelText("Lower price")).toHaveValue(0.9);
+    expect(screen.getByLabelText("Upper price")).toHaveValue(1.1);
+    expect(screen.getByLabelText("Grid levels")).toHaveValue(5);
+
+    fireEvent.change(skill, { target: { value: "yield-optimisation" } });
+    expect(screen.getByLabelText("Venus market addresses")).toHaveValue("0xD5C4C2e2facBEB59D0216D0595d63FcDc6F9A1a7");
 
     fireEvent.change(skill, { target: { value: "health-factor-monitoring" } });
     expect(screen.getByLabelText("Comptroller address")).toBeRequired();
     expect(screen.getByLabelText("Account to inspect")).toBeRequired();
+    expect(screen.getByLabelText("Comptroller address")).toHaveValue("0x94d1820b2D1c7c7452A163983Dc888CEC546b77D");
+    expect(screen.getByLabelText("Account to inspect")).toHaveValue("0x74258A428e94294F14a8c8308CE21259223A0187");
   });
 
   it("requests and independently verifies a signed quote before showing payment terms", async () => {

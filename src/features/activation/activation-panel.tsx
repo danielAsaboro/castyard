@@ -31,6 +31,13 @@ const skillOptions: { value: Skill; label: string }[] = [
   { value: "health-factor-monitoring", label: "Health-factor monitoring" },
 ];
 
+const VERIFIED_EXAMPLES = {
+  pancakePool: "0x145ECf200CF4Eb61e61E5E9E73eD63F8643816df",
+  venusMarket: "0xD5C4C2e2facBEB59D0216D0595d63FcDc6F9A1a7",
+  venusComptroller: "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D",
+  account: "0x74258A428e94294F14a8c8308CE21259223A0187",
+} as const;
+
 const actionLabels = {
   createJob: "1. Create ERC-8183 job",
   registerJob: "2. Register evaluation policy",
@@ -107,24 +114,24 @@ function extractQuote(value: unknown): SignedQuote {
 function SkillFields({ skill }: { skill: Skill }) {
   if (skill === "rebalancing") {
     return <>
-      <label>PancakeSwap V3 pool<input name="poolAddress" required placeholder="0x…" /></label>
-      <label>Target range width (bps)<input name="rangeWidthBps" required min="1" max="10000" type="number" /></label>
+      <label>PancakeSwap V3 pool<input defaultValue={VERIFIED_EXAMPLES.pancakePool} name="poolAddress" required placeholder="0x…" /></label>
+      <label>Target range width (bps)<input defaultValue="1000" name="rangeWidthBps" required min="1" max="10000" type="number" /></label>
     </>;
   }
   if (skill === "grid-trading") {
     return <>
-      <label>PancakeSwap V3 pool<input name="poolAddress" required placeholder="0x…" /></label>
-      <label>Lower price<input name="lowerPrice" required min="0" step="any" type="number" /></label>
-      <label>Upper price<input name="upperPrice" required min="0" step="any" type="number" /></label>
-      <label>Grid levels<input name="levels" required min="2" max="100" type="number" /></label>
+      <label>PancakeSwap V3 pool<input defaultValue={VERIFIED_EXAMPLES.pancakePool} name="poolAddress" required placeholder="0x…" /></label>
+      <label>Lower price<input defaultValue="0.9" name="lowerPrice" required min="0" step="any" type="number" /></label>
+      <label>Upper price<input defaultValue="1.1" name="upperPrice" required min="0" step="any" type="number" /></label>
+      <label>Grid levels<input defaultValue="5" name="levels" required min="2" max="100" type="number" /></label>
     </>;
   }
   if (skill === "yield-optimisation") {
-    return <label className="activation-wide">Venus market addresses<textarea name="markets" required placeholder="One to twenty 0x… addresses, separated by commas" /></label>;
+    return <label className="activation-wide">Venus market addresses<textarea defaultValue={VERIFIED_EXAMPLES.venusMarket} name="markets" required placeholder="One to twenty 0x… addresses, separated by commas" /></label>;
   }
   return <>
-    <label>Comptroller address<input name="comptrollerAddress" required placeholder="0x…" /></label>
-    <label>Account to inspect<input name="account" required placeholder="0x…" /></label>
+    <label>Comptroller address<input defaultValue={VERIFIED_EXAMPLES.venusComptroller} name="comptrollerAddress" required placeholder="0x…" /></label>
+    <label>Account to inspect<input defaultValue={VERIFIED_EXAMPLES.account} name="account" required placeholder="0x…" /></label>
   </>;
 }
 
@@ -303,7 +310,8 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
       </div>
       <p className="activation-intro">
         Requesting a quote does not connect a wallet or move funds. Castyard verifies the seller signature,
-        registered provider, task commitment, payment token, amount, and expiry before showing terms.
+        registered provider, task commitment, payment token, amount, and expiry before showing terms. Each skill
+        starts with a verified BSC testnet example that you can replace.
       </p>
       <form className="activation-form" onSubmit={requestQuote}>
         <label className="activation-wide">Analysis skill
@@ -311,7 +319,7 @@ export function ActivationPanel({ agentId, expectedProvider }: { agentId: string
             {skillOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
           </select>
         </label>
-        <SkillFields skill={skill} />
+        <SkillFields key={skill} skill={skill} />
         <div className="activation-wide activation-submit-row">
           <button className="button-primary" disabled={loading} type="submit">{loading ? "Verifying…" : "Get signed quote"}</button>
           <span>10-minute quote · exact task commitment · no trade execution</span>
