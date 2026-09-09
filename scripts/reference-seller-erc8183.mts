@@ -9,6 +9,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { bscTestnet } from "viem/chains";
 
 import { createJobDescription, type SignedQuote, verifySignedQuote } from "../src/features/activation/quote";
+import { BSC_TESTNET_PROTOCOL } from "../src/features/activation/contracts";
 import { sendSponsoredExactApproval } from "./sponsored-approval.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,6 +21,7 @@ const provider = "0x74258A428e94294F14a8c8308CE21259223A0187" as const;
 const privateKey = (await readFile(secretPath, "utf8")).trim() as `0x${string}`;
 const account = privateKeyToAccount(privateKey);
 const wallet = new EVMWalletProvider({ privateKey, password: privateKey, persist: false });
+process.env.ERC8183_POLICY_ADDRESS ??= BSC_TESTNET_PROTOCOL.optimisticPolicy;
 const client = await ERC8183Client.create({ walletProvider: wallet, network: "bsc-testnet" });
 const publicClient = createPublicClient({ chain: bscTestnet, transport: http(process.env.BSC_TESTNET_RPC_URL ?? "https://data-seed-prebsc-1-s1.bnbchain.org:8545") });
 

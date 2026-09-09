@@ -38,9 +38,15 @@ const verified = await verifySignedQuote(quote, { expectedProvider: provider, no
 if (verified.agentId !== REFERENCE_SELLER_AGENT_ID) throw new Error("Quote agent does not match the registered seller");
 
 const client = createPublicClient({ chain: bscTestnet, transport: http(rpcUrl) });
-const [chainId, blockNumber, disputeWindow, balance] = await Promise.all([
+const [chainId, blockNumber, policyWhitelisted, disputeWindow, balance] = await Promise.all([
   client.getChainId(),
   client.getBlockNumber(),
+  client.readContract({
+    address: BSC_TESTNET_PROTOCOL.evaluatorRouter,
+    abi: [{ type: "function", name: "policyWhitelist", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "bool" }] }] as const,
+    functionName: "policyWhitelist",
+    args: [BSC_TESTNET_PROTOCOL.optimisticPolicy],
+  }),
   client.readContract({
     address: BSC_TESTNET_PROTOCOL.optimisticPolicy,
     abi: [{ type: "function", name: "disputeWindow", stateMutability: "view", inputs: [], outputs: [{ type: "uint64" }] }] as const,
@@ -54,6 +60,7 @@ const [chainId, blockNumber, disputeWindow, balance] = await Promise.all([
   }),
 ]);
 if (chainId !== BSC_TESTNET_PROTOCOL.chainId) throw new Error(`RPC returned chain ${chainId}`);
+if (!policyWhitelisted) throw new Error(`Configured policy ${BSC_TESTNET_PROTOCOL.optimisticPolicy} is not whitelisted by the live router`);
 
 const calls = buildBrowserActivationCalls(verified, disputeWindow, now);
 const simulation = await client.simulateContract({ ...calls.createJob, account: buyer });
@@ -70,6 +77,8 @@ console.log(JSON.stringify({
   quoteAmount: verified.amount,
   quoteExpiresAt: verified.expiresAt,
   disputeWindow: disputeWindow.toString(),
+  policy: BSC_TESTNET_PROTOCOL.optimisticPolicy,
+  policyWhitelisted,
   predictedJobId: simulation.result.toString(),
   calls: {
     createJob: calls.createJob.functionName,

@@ -74,7 +74,7 @@ The ERC-8004 agent token and PancakeSwap position NFT are separate identifiers. 
 - ERC-8004 Identity Registry: `0x8004A818BFB912233c491871b3d84c89A494BD9e`
 - AgenticCommerce: `0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE`
 - EvaluatorRouter: `0xd7d36d66d2f1b608a0f943f722d27e3744f66f25`
-- OptimisticPolicy: `0x4f4678d4439fec812ac7674bb3efb4c8f5fb78a6`
+- Active OptimisticPolicy: `0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA` (discovered and whitelist-verified from live jobs on 2026-09-09; the older SDK-published address is no longer whitelisted)
 - United Stables U payment token: `0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565`
 - Seller/provider wallet: `0x74258A428e94294F14a8c8308CE21259223A0187`
 - ERC-8004 registration transaction: `0x43b1d0faf96070d5ae7fb2a695fdf6ae23f3fcb144c8c98311c6b13f9b1bd743`
