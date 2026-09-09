@@ -37,6 +37,12 @@ describe("funded ERC-8183 provider processing", () => {
     expect(saved[1]).toMatchObject({ state: "submitted", transactionHash: result.transactionHash });
   });
 
+  it("accepts an expired quote as historical evidence when its funded onchain job is still live", async () => {
+    const { quote, dependencies } = await setup({ now: () => 1700 });
+    const result = await processFundedJob(7n, quote, dependencies);
+    expect(result).toMatchObject({ jobId: "7", transactionHash: `0x${"34".repeat(32)}` });
+  });
+
   it.each([
     ["unfunded", { getJob: async () => ({ ...(await (await setup()).dependencies.getJob(7n)), status: 0 }) }],
     ["wrong provider", { getJob: async () => ({ ...(await (await setup()).dependencies.getJob(7n)), provider: "0x6666666666666666666666666666666666666666" }) }],

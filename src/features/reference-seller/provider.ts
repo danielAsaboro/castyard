@@ -49,7 +49,9 @@ export async function processFundedJob(jobId: bigint, quote: SignedQuote, depend
   const now = dependencies.now();
   const verifiedQuote = await verifySignedQuote(quote, {
     expectedProvider: dependencies.expectedProvider,
-    now,
+    // A confirmed onchain job anchors the signed quote as historical evidence.
+    // The authoritative job expiry below still prevents late execution.
+    now: Math.min(now, quote.expiresAt),
     usedNonces: dependencies.usedNonces,
   });
   const job = await dependencies.getJob(jobId);
